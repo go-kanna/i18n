@@ -1,0 +1,6 @@
+hello: "こんにちは、{name}さん！"
+items_count:
+  plural:
+    zero: "カートは空です。"
+    other: "カートに{count}個の商品があります。"
+total_price: "合計: {price}"

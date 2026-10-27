@@ -1,0 +1,9 @@
+hello: "Hello, {name}!"
+items_count:
+  plural:
+    zero: "Your cart is empty."
+    one: "You have {count} item in your cart."
+    other: "You have {count} items in your cart."
+total_price: "Total: {price:number}"
+user:
+  deleted: "User {name} has been deleted."
