@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"fmt"
 	"go/token"
 	"strconv"
 )
@@ -28,4 +29,27 @@ func ParseTemplate(src string) (segments, params, diags []string) {
 		diags = append(diags, d.String())
 	}
 	return segments, params, diags
+}
+
+// ParseLocale reads src as the locale file en.yaml, spelling each message as
+// its key and where it is written, then each form: its category, if any, its
+// text quoted, and where it is written, such as
+// `items@1:1 one "One"@3:10 other "Many"@4:12`; and each diagnostic as
+// diag.Diag.String does.
+func ParseLocale(src string) (entries, diags []string) {
+	es, ds := parseLocale("en.yaml", []byte(src))
+	for _, e := range es {
+		spelled := fmt.Appendf(nil, "%s@%d:%d", e.key, e.pos.Line, e.pos.Column)
+		for _, f := range e.forms {
+			if f.category != "" {
+				spelled = fmt.Appendf(spelled, " %s", f.category)
+			}
+			spelled = fmt.Appendf(spelled, " %q@%d:%d", f.src, f.pos.Line, f.pos.Column)
+		}
+		entries = append(entries, string(spelled))
+	}
+	for _, d := range ds {
+		diags = append(diags, d.String())
+	}
+	return entries, diags
 }
