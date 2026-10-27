@@ -1,2 +1,4 @@
+github.com/go-kanna/internal v0.0.1 h1:jxB8/0lqEmI40BNB2hH08Ba406OmdDE/rR6v8Katgv4=
+github.com/go-kanna/internal v0.0.1/go.mod h1:Df477EkeFmw5w4hFNoBGUZfZJfgKJnaemuReERxK7to=
 golang.org/x/text v0.43.0 h1:1QivrlhwAsnMOcqgOdl9my7s9OyZl8O5/UGUTJVXoWc=
 golang.org/x/text v0.43.0/go.mod h1:hbSIYA/amXcRXTFSZqh8tWHEoqRvvbKPJ2uz/KU+a+s=
