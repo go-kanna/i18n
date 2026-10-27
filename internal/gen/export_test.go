@@ -3,7 +3,11 @@ package gen
 import (
 	"fmt"
 	"go/token"
+	"path/filepath"
 	"strconv"
+
+	"github.com/go-kanna/internal/diag"
+	"golang.org/x/text/language"
 )
 
 // ParseTemplate parses src, spelling each segment as its text quoted or its
@@ -52,4 +56,36 @@ func ParseLocale(src string) (entries, diags []string) {
 		diags = append(diags, d.String())
 	}
 	return entries, diags
+}
+
+// ReadLocales reads the locale directory dir/locales, spelling each catalog as
+// its language, its file name, and how many messages it holds, such as
+// "en en.yaml 2"; and each diagnostic as diag.Diag.String does, its file
+// relative to dir.
+func ReadLocales(dir string) (catalogs, diags []string) {
+	cs, ds := readLocales(filepath.Join(dir, "locales"))
+	for _, c := range cs {
+		catalogs = append(catalogs, fmt.Sprintf("%s %s %d", c.tag, filepath.Base(c.path), len(c.entries)))
+	}
+	for _, d := range ds {
+		d.Pos.Filename = diag.ShortPath(dir, d.Pos.Filename)
+		diags = append(diags, d.String())
+	}
+	return catalogs, diags
+}
+
+// DefaultCatalog picks lang as the default language among the locale files
+// locales/<tag>.yaml of tags, returning the language picked, and each
+// diagnostic as diag.Diag.String spells it.
+func DefaultCatalog(lang string, tags ...string) (string, []string) {
+	cs := make([]catalog, len(tags))
+	for i, t := range tags {
+		cs[i] = catalog{tag: language.MustParse(t), path: "locales/" + t + ".yaml"}
+	}
+	c, ds := defaultCatalog("locales", cs, language.MustParse(lang))
+	diags := make([]string, 0, len(ds))
+	for _, d := range ds {
+		diags = append(diags, d.String())
+	}
+	return c.tag.String(), diags
 }
