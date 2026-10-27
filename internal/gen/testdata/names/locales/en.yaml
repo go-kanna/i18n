@@ -1,0 +1,5 @@
+items:
+  plural:
+    one: "{count} item for {i18n}"
+    other: "{count} items for {i18n}"
+kinds: "{type} of {error}"

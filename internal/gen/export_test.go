@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"errors"
 	"fmt"
 	"go/token"
 	"maps"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-kanna/internal/diag"
+	"github.com/go-kanna/internal/output"
 	"golang.org/x/text/language"
 )
 
@@ -138,4 +140,26 @@ func Analyze(def string, locales map[string]string, declared ...string) (constru
 		diags = append(diags, d.String())
 	}
 	return constructors, catalogs, diags
+}
+
+// Emit generates the package messages from the locale files in dir/locales,
+// with en the default language, keeping clear of what the files already in
+// dir/messages declare.
+func Emit(dir string) ([]byte, error) {
+	cs, ds := readLocales(filepath.Join(dir, "locales"))
+	def, dds := defaultCatalog(filepath.Join(dir, "locales"), cs, language.English)
+	declared := output.DeclaredNames(filepath.Join(dir, "messages"), "i18n_gen.go", "messages")
+	m, ads := analyze(def, cs, declared)
+	if all := slices.Concat(ds, dds, ads); diag.HasErrors(all) {
+		msgs := make([]string, len(all))
+		for i, d := range all {
+			msgs[i] = d.String()
+		}
+		return nil, errors.New(strings.Join(msgs, "\n"))
+	}
+	src, err := emit(m, "messages", slices.Sorted(maps.Keys(declared))).Bytes()
+	if err != nil {
+		return src, fmt.Errorf("generated code does not parse: %w", err)
+	}
+	return src, nil
 }

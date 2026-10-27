@@ -1,0 +1,12 @@
+greeting: "こんにちは！"
+hello: "こんにちは、{name}さん！"
+items_count:
+  plural:
+    other: "アイテムが{count}個あります。"
+total_price: "合計: {price}"
+price_of: "{name}は{price}です"
+failed: "理由: {error}"
+braces: "名前には {{name}} と書きます。"
+empty: ""
+user:
+  not_found: "ユーザーが見つかりません。"
