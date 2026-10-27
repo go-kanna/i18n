@@ -62,7 +62,9 @@ With the defaults, that line reads `locales/` and writes `messages/i18n_gen.go`:
 
 package messages
 
-import "github.com/go-kanna/i18n"
+import (
+	"github.com/go-kanna/i18n"
+)
 
 // Hello returns the message "hello":
 //
