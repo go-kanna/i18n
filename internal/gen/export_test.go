@@ -3,8 +3,11 @@ package gen
 import (
 	"fmt"
 	"go/token"
+	"maps"
 	"path/filepath"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/go-kanna/internal/diag"
 	"golang.org/x/text/language"
@@ -88,4 +91,51 @@ func DefaultCatalog(lang string, tags ...string) (string, []string) {
 		diags = append(diags, d.String())
 	}
 	return c.tag.String(), diags
+}
+
+// Analyze analyzes the locale files locales/<tag>.yaml, whose sources locales
+// holds by tag, with def as the default language. declared are the names the
+// destination package declares, each as name@file:line. It spells each
+// constructor as its name and its parameters, such as
+// "ItemsCount(count int, price number)", the catalogs as their tags in order,
+// and each diagnostic as diag.Diag.String does.
+func Analyze(def string, locales map[string]string, declared ...string) (constructors, catalogs, diags []string) {
+	var (
+		cs  = make([]catalog, 0, len(locales))
+		dc  catalog
+		dds []diag.Diag
+	)
+	for _, tag := range slices.Sorted(maps.Keys(locales)) {
+		path := "locales/" + tag + ".yaml"
+		entries, ds := parseLocale(path, []byte(locales[tag]))
+		dds = append(dds, ds...)
+		c := catalog{tag: language.MustParse(tag), path: path, entries: entries}
+		if tag == def {
+			dc = c
+		}
+		cs = append(cs, c)
+	}
+	names := make(map[string]token.Position, len(declared))
+	for _, d := range declared {
+		name, at, _ := strings.Cut(d, "@")
+		file, line, _ := strings.Cut(at, ":")
+		n, _ := strconv.Atoi(line)
+		names[name] = token.Position{Filename: "messages/" + file, Line: n}
+	}
+
+	m, ds := analyze(dc, cs, names)
+	for _, msg := range m.messages {
+		params := make([]string, len(msg.params))
+		for i, p := range msg.params {
+			params[i] = goName(p.name) + " " + p.kind.String()
+		}
+		constructors = append(constructors, msg.fn+"("+strings.Join(params, ", ")+")")
+	}
+	for _, c := range m.catalogs {
+		catalogs = append(catalogs, c.tag.String())
+	}
+	for _, d := range append(dds, ds...) {
+		diags = append(diags, d.String())
+	}
+	return constructors, catalogs, diags
 }

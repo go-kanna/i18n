@@ -36,6 +36,11 @@ type entry struct {
 	forms []form
 }
 
+// plural reports whether e is a plural message.
+func (e entry) plural() bool {
+	return e.forms[0].category != ""
+}
+
 // form is one form of a message, as written and parsed.
 type form struct {
 	template
