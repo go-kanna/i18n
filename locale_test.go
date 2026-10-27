@@ -89,9 +89,14 @@ func TestRender(t *testing.T) {
 			args:  []i18n.Arg{arg("count", 1)},
 			want:  "アイテムが1個あります。",
 		},
-		// The language's rules pick the form, not the number itself.
-		{name: "plural 0 in en", lang: "en", entry: forms, args: []i18n.Arg{arg("count", 0)}, want: "other:0"},
+		// The language's rules pick the form, not the number itself, except that
+		// a count of 0 takes zero when there is one.
+		{name: "plural 0 in en", lang: "en", entry: forms, args: []i18n.Arg{arg("count", 0)}, want: "zero:0"},
+		{name: "plural 0 in fr", lang: "fr", entry: forms, args: []i18n.Arg{arg("count", 0)}, want: "zero:0"},
+		{name: "plural 1 in fr", lang: "fr", entry: forms, args: []i18n.Arg{arg("count", 1)}, want: "one:1"},
 		{name: "plural 0 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 0)}, want: "zero:0"},
+		{name: "plural 10 in lv", lang: "lv", entry: forms, args: []i18n.Arg{arg("count", 10)}, want: "zero:10"},
+		{name: "plural 2 in en", lang: "en", entry: forms, args: []i18n.Arg{arg("count", 2)}, want: "other:2"},
 		{name: "plural 2 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 2)}, want: "two:2"},
 		{name: "plural 100 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 100)}, want: "other:100"},
 		{name: "plural 2 in ru", lang: "ru", entry: forms, args: []i18n.Arg{arg("count", 2)}, want: "few:2"},

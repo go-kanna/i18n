@@ -165,6 +165,10 @@ it: 1 is `one` in English, while Japanese has no `one` and uses `other` for ever
 form its language uses gets a warning, because those counts would render with `other`: Russian with only `other` lacks
 `one`, `few`, and `many`, while Japanese with only `other` lacks nothing.
 
+A count of 0 renders with `zero` whenever the message has it, as in Rails, so `zero: "You have no items."` in `en.yaml`
+works although English has no zero category. In a language whose rules do have one, such as Latvian, `zero` takes the
+other counts of that category too: 10 through 20, for one.
+
 ### Placeholders
 
 | Form            | Parameter | Rendered                                                     |

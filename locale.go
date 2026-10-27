@@ -34,7 +34,7 @@ func newLocale(c Catalog) (locale, error) {
 func (l locale) render(e Entry, args []Arg) string {
 	t := e.Single
 	if e.Plural != nil {
-		t = e.Plural.form(l.category(args))
+		t = l.pick(*e.Plural, args)
 	}
 
 	var b strings.Builder
@@ -53,13 +53,18 @@ func (l locale) render(e Entry, args []Arg) string {
 	return b.String()
 }
 
-// category returns the plural category the count in args falls in under the
-// rules of this language, or Other when there is no int count.
-func (l locale) category(args []Arg) plural.Form {
+// pick returns the form of p for the count in args. A count of 0 takes Zero
+// when p has it, whatever the language, as in Rails and i18next; any other
+// count takes the form of the category it falls in under the rules of this
+// language. Without an int count, it is Other.
+func (l locale) pick(p Plural, args []Arg) Template {
 	v, _ := lookup(args, CountParam)
 	n, ok := v.(int)
-	if !ok {
-		return plural.Other
+	switch {
+	case !ok:
+		return p.Other
+	case n == 0 && p.Zero != nil:
+		return p.Zero
 	}
 	// The rules are written for the absolute value, and those taking remainders
 	// panic on a negative one. MinInt has no absolute value as an int, so it
@@ -70,7 +75,7 @@ func (l locale) category(args []Arg) plural.Form {
 	if n < 0 {
 		n = -n
 	}
-	return plural.Cardinal.MatchPlural(l.tag, n, 0, 0, 0, 0)
+	return p.form(plural.Cardinal.MatchPlural(l.tag, n, 0, 0, 0, 0))
 }
 
 func (l locale) format(v any) string {

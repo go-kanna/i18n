@@ -20,7 +20,8 @@ type Entry struct {
 
 // Plural holds the forms of a plural message, one for each CLDR plural category
 // the language tells apart. Other is always there, and a count whose category
-// has no form, left nil, renders with it.
+// has no form, left nil, renders with it. Zero, when set, is the form of a count
+// of 0 in every language, English and others whose rules have no zero included.
 type Plural struct {
 	Zero, One, Two, Few, Many, Other Template
 }
