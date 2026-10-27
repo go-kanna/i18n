@@ -4,8 +4,13 @@ go 1.26.0
 
 toolchain go1.26.9
 
-// There is no require of github.com/go-kanna/i18n yet: it is unreleased, so
-// this resolves through the repository's go.work. Once it carries a tag,
-// running `go get -tool github.com/go-kanna/i18n/cmd/kanna-i18n` in your own
-// module adds the require and the setup stands on its own.
 tool github.com/go-kanna/i18n/cmd/kanna-i18n
+
+require github.com/go-kanna/i18n v0.0.1
+
+require (
+	github.com/go-kanna/internal v0.0.2 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	golang.org/x/mod v0.42.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
+)
