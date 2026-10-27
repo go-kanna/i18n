@@ -242,7 +242,8 @@ kanna-i18n [flags]
 
 Paths are relative to the directory `go generate` runs in, the one holding the `//go:generate` line. The package of the
 generated file is the one the Go files already in the destination declare; `-package` names it when there are none yet,
-and one that disagrees with them is an error. A run that succeeds prints nothing. A file named `i18n_gen.go` without the
+and one that disagrees with them is an error. A run that succeeds prints nothing but its warnings, which
+[Validation](#validation) lists, such as the keys a translation lacks. A file named `i18n_gen.go` without the
 generated-code header is never touched.
 
 ## Example
