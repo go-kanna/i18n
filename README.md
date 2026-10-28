@@ -194,7 +194,8 @@ becomes `userName`. A name Go reserves gets `Arg` appended: `{type}` becomes `ty
 The default language — `-default`, `en` unless said otherwise — defines the constructors: their names, parameters, and
 types come from its file, and every other file is checked against it. A file for a regional variant serves a bare
 default when there is no exact one: `-default en` takes `en-US.yaml` in the absence of `en.yaml`, and warns when
-`en-GB.yaml` could have been meant as well.
+`en-GB.yaml` could have been meant as well. A default written with a region or script, such as `-default en-US`, is
+served by its own file alone: neither `en.yaml` nor `en-GB.yaml` stands in for it.
 
 `Localizer` takes language tags such as `"ja"` or `"pt-BR"`, Accept-Language values such as `"fr, ja;q=0.8"`, or both,
 and tries them in order, value by value, until one is close to a language the package was generated with, as CLDR

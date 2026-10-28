@@ -117,21 +117,24 @@ func baseOf(tag language.Tag) (language.Base, bool) {
 }
 
 // defaultCatalog picks the catalog of lang, the default language, among
-// catalogs read from dir: the catalog of lang itself or, without one, of a
-// variant of lang, such as en-US.yaml for en. A catalog of another language is
-// never taken, however close: the default language defines what every
-// constructor says.
+// catalogs read from dir: the catalog of lang itself or, when lang is a bare
+// language without one, of a variant of lang, such as en-US.yaml for en. A
+// catalog of another language is never taken, however close: the default
+// language defines what every constructor says. Nor does one stand in for a
+// default written with a region or script: en.yaml or en-GB.yaml passing for
+// en-US would hide that en-US.yaml is missing.
 //
 // When several variants could be meant, CLDR's matching picks one, with a
 // warning.
 func defaultCatalog(dir string, catalogs []catalog, lang language.Tag) (catalog, []diag.Diag) {
 	base, ok := baseOf(lang)
+	bare := ok && lang.String() == base.String()
 	var variants []catalog
 	for _, c := range catalogs {
 		if c.tag == lang {
 			return c, nil
 		}
-		if b, _ := baseOf(c.tag); ok && b == base {
+		if b, _ := baseOf(c.tag); bare && b == base {
 			variants = append(variants, c)
 		}
 	}

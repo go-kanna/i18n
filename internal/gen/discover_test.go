@@ -230,7 +230,25 @@ func TestDefaultCatalog(t *testing.T) {
 		{name: "itself", lang: "en", tags: []string{"en-GB", "en", "ja"}, want: "en"},
 		{name: "a region of it", lang: "en", tags: []string{"ja", "en-US"}, want: "en-US"},
 		{name: "a script of it", lang: "zh", tags: []string{"zh-Hant"}, want: "zh-Hant"},
-		{name: "the language of a region", lang: "en-US", tags: []string{"ja", "en"}, want: "en"},
+		// A default written with a region is served by its own file alone.
+		{
+			name: "the language of a region",
+			lang: "en-US",
+			tags: []string{"ja", "en"},
+			wantDiags: []string{
+				"locales: error: no locale file for en-US, the default language\n" +
+					"  there are locale files for ja, en; choose one with -default",
+			},
+		},
+		{
+			name: "another region of the language",
+			lang: "en-US",
+			tags: []string{"en-GB"},
+			wantDiags: []string{
+				"locales: error: no locale file for en-US, the default language\n" +
+					"  there are locale files for en-GB; choose one with -default",
+			},
+		},
 		{
 			name: "one of two regions",
 			lang: "en",
