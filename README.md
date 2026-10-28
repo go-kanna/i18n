@@ -142,8 +142,9 @@ locales/ja.yaml: warning: missing keys: user.not_found
 
 The locale directory is flat — one file per language, no recursion — and the file name without its extension is the
 language: `en.yaml`, `pt-BR.yaml`, `ja.yml`. Nothing named like a language is skipped in silence: a subdirectory such as
-`locales/en/`, or a file in another format such as `en.json` or `en.toml`, stops generation. Other files are skipped
-with a warning, so a stray `config.yaml` does not fail the run, and names starting with a dot are skipped without one.
+`locales/en/` or `locales/en.yaml/`, or a file in another format such as `en.json` or `en.toml`, stops generation. Other
+files are skipped with a warning, so a stray `config.yaml` does not fail the run, and names starting with a dot are
+skipped without one.
 
 Nested mappings become dot-joined keys, and keys become constructor names: `user.not_found` generates `UserNotFound()`.
 Each part of a key matches `[a-z][a-z0-9_]*`. Two keys that generate one name, or a key that generates a name the

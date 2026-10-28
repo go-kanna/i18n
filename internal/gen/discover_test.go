@@ -16,11 +16,14 @@ func writeFiles(t *testing.T, dir string, files map[string]string) {
 
 	for name, body := range files {
 		path := filepath.Join(dir, name)
+		if name[len(name)-1] == '/' {
+			if err := os.MkdirAll(path, 0o750); err != nil {
+				t.Fatal(err)
+			}
+			continue
+		}
 		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 			t.Fatal(err)
-		}
-		if name[len(name)-1] == '/' {
-			continue
 		}
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
@@ -90,6 +93,7 @@ func TestReadLocales(t *testing.T) {
 			files: map[string]string{
 				"locales/en.yaml":               msg,
 				"locales/ja/messages.yaml":      msg,
+				"locales/fr.yml/":               "",
 				"locales/translations/de.yaml":  msg,
 				"locales/scripts/convert.sh":    "",
 				"locales/empty/":                "",
@@ -98,6 +102,7 @@ func TestReadLocales(t *testing.T) {
 			},
 			wantCatalogs: []string{"en en.yaml 1"},
 			wantDiags: []string{
+				"locales/fr.yml: error: a language is one file, not a directory\n  merge the files in it into fr.yaml",
 				"locales/ja: error: a language is one file, not a directory\n  merge the files in it into ja.yaml",
 				"locales/translations: warning: skipped: locale files are read from the locale directory alone\n" +
 					"  move them into locales",

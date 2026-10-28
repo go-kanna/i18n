@@ -28,10 +28,11 @@ var yamlExts = []string{".yaml", ".yml"}
 // their names.
 //
 // The directory is flat, and nothing named like a language is skipped in
-// silence: a directory or a file that is not YAML named so is an error, since
-// its language would otherwise drop out of the generated package without a
-// word. Anything else is skipped with a warning, except a directory that holds
-// no YAML and a name starting with a dot, which are skipped without one.
+// silence: a directory named like a language or a locale file, or a file named
+// so that is not YAML, is an error, since its language would otherwise drop out
+// of the generated package without a word. Anything else is skipped with a
+// warning, except a directory that holds no YAML and a name starting with a
+// dot, which are skipped without one.
 func readLocales(dir string) ([]catalog, []diag.Diag) {
 	ents, err := os.ReadDir(dir)
 	if err != nil {
@@ -50,11 +51,13 @@ func readLocales(dir string) ([]catalog, []diag.Diag) {
 		}
 		path := filepath.Join(dir, name)
 		pos := token.Position{Filename: path}
+		ext := filepath.Ext(name)
+		stem := strings.TrimSuffix(name, ext)
 
 		if isDir(path) {
-			if _, ok := languageOf(name); ok {
+			if _, ok := languageOf(stem); ok {
 				diags = append(diags, diag.Errorf(pos, "a language is one file, not a directory").
-					WithHints(fmt.Sprintf("merge the files in it into %s.yaml", name)))
+					WithHints(fmt.Sprintf("merge the files in it into %s.yaml", stem)))
 			} else if holdsYAML(path) {
 				diags = append(diags, diag.Warningf(pos, "skipped: locale files are read from the locale directory alone").
 					WithHints("move them into "+filepath.Base(dir)))
@@ -62,8 +65,6 @@ func readLocales(dir string) ([]catalog, []diag.Diag) {
 			continue
 		}
 
-		ext := filepath.Ext(name)
-		stem := strings.TrimSuffix(name, ext)
 		tag, ok := languageOf(stem)
 		switch {
 		case !ok:
