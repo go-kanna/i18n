@@ -159,7 +159,7 @@ Every value is a string or a mapping. Quote a value that YAML would read as some
 A message declares its plural forms under an explicit `plural` mapping, keyed by CLDR category (`zero`, `one`, `two`,
 `few`, `many`, `other`) and always defining `other`. Keys that merely happen to be named `one` or `other` are ordinary
 nesting: the only name a locale file cannot use freely is a mapping-valued `plural`, which takes no other keys beside
-it.
+it. At the root of a file, where there is no message for it to be the forms of, `plural` is ordinary nesting too.
 
 The constructor takes `count int` first, and the count picks the form under the plural rules of the language rendering
 it: 1 is `one` in English, while Japanese has no `one` and uses `other` for every count. A plural message that lacks a
@@ -186,9 +186,9 @@ plural form, say — and two different kinds are an error. The default language 
 translation may leave the kind off, as `ja.yaml` above does for the price, and one that writes a different kind stops
 generation.
 
-Parameters follow the order in which they first appear, `count` first, and are named in camelCase: `{user_name}`
-becomes `userName`. A name Go reserves gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes
-`errorArg`.
+Parameters follow the order in which they first appear, `count` first and the forms of a plural message read in the
+order of their categories, `zero` to `other`, and are named in camelCase: `{user_name}` becomes `userName`. A name Go
+reserves gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes `errorArg`.
 
 ## Languages
 

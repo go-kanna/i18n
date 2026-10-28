@@ -49,6 +49,12 @@ func TestParseLocale(t *testing.T) {
 			want: []string{`items.plural@2:3 "Items"@2:11`},
 		},
 		{
+			// There is no message at the root for the forms to be of.
+			name: "plural at the root is ordinary nesting",
+			src:  "plural:\n  one: \"One\"\n  other: \"Many\"\n",
+			want: []string{`plural.one@2:3 "One"@2:8`, `plural.other@3:3 "Many"@3:10`},
+		},
+		{
 			name: "block scalar",
 			src:  "terms: |\n  Line one.\n  Line two.\n",
 			want: []string{`terms@1:1 "Line one.\nLine two.\n"@1:8`},
