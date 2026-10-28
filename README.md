@@ -195,10 +195,11 @@ default when there is no exact one: `-default en` takes `en-US.yaml` in the abse
 `en-GB.yaml` could have been meant as well.
 
 `Localizer` takes language tags such as `"ja"` or `"pt-BR"`, Accept-Language values such as `"fr, ja;q=0.8"`, or both,
-and tries them in order until one names a language the package was generated with. So
-`messages.Localizer(cookie.Value, r.Header.Get("Accept-Language"))` prefers the language the user picked, then the ones
-the browser asks for. What does not parse is skipped, a request for `en-US` is served by `en`, and when nothing
-matches, the default language is used.
+and tries them in order, value by value, until one is close to a language the package was generated with, as CLDR
+judges closeness: a request for `en-US` is served by `en`, and one for `nb` by `da` when the package has Danish but no
+Norwegian. So `messages.Localizer(cookie.Value, r.Header.Get("Accept-Language"))` prefers the language the user picked,
+then the ones the browser asks for. A value that does not parse is skipped as a whole, one bad entry and all, and when
+nothing matches, the default language is used.
 
 A message the chosen language lacks falls back through its parent languages — `en-GB` to `en` — and then to the default
 language, and is rendered under the plural rules and number format of the language it is found in. `Localize` never

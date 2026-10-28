@@ -119,6 +119,7 @@ func TestBundle_Localizer(t *testing.T) {
 		{name: "first that matches", langs: []string{"fr", "ja", "de"}, want: "こんにちは！"},
 		{name: "first wins over later", langs: []string{"de", "ja"}, want: "Hallo!"},
 		{name: "unparsable skipped", langs: []string{"not a tag", "ja"}, want: "こんにちは！"},
+		{name: "a bad entry drops its whole value", langs: []string{"ja, not a tag", "de"}, want: "Hallo!"},
 		{name: "empty skipped", langs: []string{"", "de"}, want: "Hallo!"},
 	}
 
@@ -174,6 +175,37 @@ func TestBundle_Localizer_parents(t *testing.T) {
 	// The default need not be English: what matches nothing gets Japanese.
 	if got := b.Localizer("fr").Localize(msg("greeting")); got != "こんにちは！" {
 		t.Errorf("Localizer(fr).Localize(greeting) = %q, want こんにちは！", got)
+	}
+}
+
+// The language matched is the closest one, as CLDR judges closeness, not only
+// one named; and the values are tried one at a time, so the first with a close
+// language wins over a later one with an exact match.
+func TestBundle_Localizer_closest(t *testing.T) {
+	t.Parallel()
+
+	b := i18n.NewBundle(
+		i18n.Catalog{Lang: "en", Entries: map[string]i18n.Entry{"greeting": single(text("Hello!"))}},
+		i18n.Catalog{Lang: "da", Entries: map[string]i18n.Entry{"greeting": single(text("Hej!"))}},
+	)
+
+	tests := []struct {
+		name  string
+		langs []string
+		want  string
+	}{
+		{name: "Norwegian by Danish", langs: []string{"nb"}, want: "Hej!"},
+		{name: "value by value", langs: []string{"nb", "en-GB"}, want: "Hej!"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := b.Localizer(tt.langs...).Localize(msg("greeting")); got != tt.want {
+				t.Errorf("Localizer(%q).Localize(greeting) = %q, want %q", tt.langs, got, tt.want)
+			}
+		})
 	}
 }
 
