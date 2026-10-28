@@ -11,7 +11,8 @@ type Message struct {
 // Arg is the value of the placeholder Name.
 //
 // A string or an int is rendered as it is, and a float64 in the number format
-// of the language rendering it: that covers everything a generated constructor
+// of the language rendering it, under CLDR's default pattern, which keeps three
+// fraction digits at most: that covers everything a generated constructor
 // passes. Any other value is rendered by fmt.
 type Arg struct {
 	Name  string

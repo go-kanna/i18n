@@ -58,6 +58,15 @@ func TestRender(t *testing.T) {
 		{name: "float64", lang: "en", entry: total, args: []i18n.Arg{arg("price", 1234.56)}, want: "Total: 1,234.56"},
 		{name: "float64 in de", lang: "de", entry: total, args: []i18n.Arg{arg("price", 1234.56)}, want: "Total: 1.234,56"},
 		{name: "float64 in ja", lang: "ja", entry: total, args: []i18n.Arg{arg("price", 1234.56)}, want: "Total: 1,234.56"},
+		// CLDR's default pattern keeps three fraction digits at most.
+		{
+			name:  "float64 rounded",
+			lang:  "en",
+			entry: total,
+			args:  []i18n.Arg{arg("price", 1234.5678)},
+			want:  "Total: 1,234.568",
+		},
+		{name: "float64 rounded to none", lang: "en", entry: total, args: []i18n.Arg{arg("price", 0.0001)}, want: "Total: 0"},
 		// What no generated constructor passes is left to fmt.
 		{
 			name:  "other types",

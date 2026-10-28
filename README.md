@@ -171,17 +171,19 @@ other counts of that category too: 10 through 20, for one.
 
 ### Placeholders
 
-| Form            | Parameter | Rendered                                                     |
-|-----------------|-----------|--------------------------------------------------------------|
-| `{name}`        | `string`  | as it is                                                     |
-| `{name:int}`    | `int`     | as it is: counts, IDs                                        |
-| `{name:number}` | `float64` | in the language's format: `1,234.56` in en, `1.234,56` in de |
-| `{{`, `}}`      |           | literal braces                                               |
+| Form            | Parameter | Rendered                                                                             |
+|-----------------|-----------|--------------------------------------------------------------------------------------|
+| `{name}`        | `string`  | as it is                                                                             |
+| `{name:int}`    | `int`     | as it is: counts, IDs                                                                |
+| `{name:number}` | `float64` | in the language's format, three decimals at most: `1,234.56` in en, `1.234,56` in de |
+| `{{`, `}}`      |           | literal braces                                                                       |
 
-`{name:string}` is the same as `{name}`, and `count` in a plural message is always an `int`. Within a message, a
-placeholder written without a kind takes the one written for it elsewhere — in another plural form, say — and two
-different kinds are an error. The default language decides each parameter's type: a translation may leave the kind off,
-as `ja.yaml` above does for the price, and one that writes a different kind stops generation.
+`{name:string}` is the same as `{name}`, and `count` in a plural message is always an `int`. A `number` is written as
+CLDR's default pattern for the language has it, which keeps three fraction digits at most: 1234.5678 renders as
+`1,234.568`. Within a message, a placeholder written without a kind takes the one written for it elsewhere — in another
+plural form, say — and two different kinds are an error. The default language decides each parameter's type: a
+translation may leave the kind off, as `ja.yaml` above does for the price, and one that writes a different kind stops
+generation.
 
 Parameters follow the order in which they first appear, `count` first, and are named in camelCase: `{user_name}`
 becomes `userName`. A name Go reserves gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes
