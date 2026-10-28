@@ -142,23 +142,24 @@ locales/ja.yaml: warning: missing keys: user.not_found
 
 The locale directory is flat — one file per language, no recursion — and the file name without its extension is the
 language: `en.yaml`, `pt-BR.yaml`, `ja.yml`. Nothing named like a language is skipped in silence: a subdirectory such as
-`locales/en/`, or a file in another format such as `en.json` or `en.toml`, stops generation. Other files are skipped
-with a warning, so a stray `config.yaml` does not fail the run, and names starting with a dot are skipped without one.
+`locales/en/` or `locales/en.yaml/`, or a file in another format such as `en.json` or `en.toml`, stops generation. Other
+files are skipped with a warning, so a stray `config.yaml` does not fail the run, and names starting with a dot are
+skipped without one.
 
 Nested mappings become dot-joined keys, and keys become constructor names: `user.not_found` generates `UserNotFound()`.
 Each part of a key matches `[a-z][a-z0-9_]*`. Two keys that generate one name, or a key that generates a name the
-destination package already declares, stop generation; so does the key `localizer`, whose name the generated file takes
-for itself.
+destination package already declares, stop generation; so do the key `localizer`, whose name the generated file takes
+for itself, and a `Localizer` the destination package declares by hand.
 
 Every value is a string or a mapping. Quote a value that YAML would read as something else, such as `"true"` or
-`"123"`.
+`"123"`. A message cannot hold a control character other than a line break or a tab, nor a byte order mark.
 
 ### Plural forms
 
 A message declares its plural forms under an explicit `plural` mapping, keyed by CLDR category (`zero`, `one`, `two`,
 `few`, `many`, `other`) and always defining `other`. Keys that merely happen to be named `one` or `other` are ordinary
 nesting: the only name a locale file cannot use freely is a mapping-valued `plural`, which takes no other keys beside
-it.
+it. At the root of a file, where there is no message for it to be the forms of, `plural` is ordinary nesting too.
 
 The constructor takes `count int` first, and the count picks the form under the plural rules of the language rendering
 it: 1 is `one` in English, while Japanese has no `one` and uses `other` for every count. A plural message that lacks a
@@ -171,34 +172,38 @@ other counts of that category too: 10 through 20, for one.
 
 ### Placeholders
 
-| Form            | Parameter | Rendered                                                     |
-|-----------------|-----------|--------------------------------------------------------------|
-| `{name}`        | `string`  | as it is                                                     |
-| `{name:int}`    | `int`     | as it is: counts, IDs                                        |
-| `{name:number}` | `float64` | in the language's format: `1,234.56` in en, `1.234,56` in de |
-| `{{`, `}}`      |           | literal braces                                               |
+| Form            | Parameter | Rendered                                                                             |
+|-----------------|-----------|--------------------------------------------------------------------------------------|
+| `{name}`        | `string`  | as it is                                                                             |
+| `{name:int}`    | `int`     | as it is: counts, IDs                                                                |
+| `{name:number}` | `float64` | in the language's format, three decimals at most: `1,234.56` in en, `1.234,56` in de |
+| `{{`, `}}`      |           | literal braces                                                                       |
 
-`{name:string}` is the same as `{name}`, and `count` in a plural message is always an `int`. Within a message, a
-placeholder written without a kind takes the one written for it elsewhere — in another plural form, say — and two
-different kinds are an error. The default language decides each parameter's type: a translation may leave the kind off,
-as `ja.yaml` above does for the price, and one that writes a different kind stops generation.
+`{name:string}` is the same as `{name}`, and `count` in a plural message is always an `int`. A `number` is written as
+CLDR's default pattern for the language has it, which keeps three fraction digits at most: 1234.5678 renders as
+`1,234.568`. Within a message, a placeholder written without a kind takes the one written for it elsewhere — in another
+plural form, say — and two different kinds are an error. The default language decides each parameter's type: a
+translation may leave the kind off, as `ja.yaml` above does for the price, and one that writes a different kind stops
+generation.
 
-Parameters follow the order in which they first appear, `count` first, and are named in camelCase: `{user_name}`
-becomes `userName`. A name Go reserves gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes
-`errorArg`.
+Parameters follow the order in which they first appear, `count` first and the forms of a plural message read in the
+order of their categories, `zero` to `other`, and are named in camelCase: `{user_name}` becomes `userName`. A name Go
+reserves gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes `errorArg`.
 
 ## Languages
 
 The default language — `-default`, `en` unless said otherwise — defines the constructors: their names, parameters, and
 types come from its file, and every other file is checked against it. A file for a regional variant serves a bare
 default when there is no exact one: `-default en` takes `en-US.yaml` in the absence of `en.yaml`, and warns when
-`en-GB.yaml` could have been meant as well.
+`en-GB.yaml` could have been meant as well. A default written with a region or script, such as `-default en-US`, is
+served by its own file alone: neither `en.yaml` nor `en-GB.yaml` stands in for it.
 
 `Localizer` takes language tags such as `"ja"` or `"pt-BR"`, Accept-Language values such as `"fr, ja;q=0.8"`, or both,
-and tries them in order until one names a language the package was generated with. So
-`messages.Localizer(cookie.Value, r.Header.Get("Accept-Language"))` prefers the language the user picked, then the ones
-the browser asks for. What does not parse is skipped, a request for `en-US` is served by `en`, and when nothing
-matches, the default language is used.
+and tries them in order, value by value, until one is close to a language the package was generated with, as CLDR
+judges closeness: a request for `en-US` is served by `en`, and one for `nb` by `da` when the package has Danish but no
+Norwegian. So `messages.Localizer(cookie.Value, r.Header.Get("Accept-Language"))` prefers the language the user picked,
+then the ones the browser asks for. A value that does not parse is skipped as a whole, one bad entry and all, and when
+nothing matches, the default language is used.
 
 A message the chosen language lacks falls back through its parent languages — `en-GB` to `en` — and then to the default
 language, and is rendered under the plural rules and number format of the language it is found in. `Localize` never

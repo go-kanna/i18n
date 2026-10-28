@@ -49,6 +49,12 @@ func TestParseLocale(t *testing.T) {
 			want: []string{`items.plural@2:3 "Items"@2:11`},
 		},
 		{
+			// There is no message at the root for the forms to be of.
+			name: "plural at the root is ordinary nesting",
+			src:  "plural:\n  one: \"One\"\n  other: \"Many\"\n",
+			want: []string{`plural.one@2:3 "One"@2:8`, `plural.other@3:3 "Many"@3:10`},
+		},
+		{
 			name: "block scalar",
 			src:  "terms: |\n  Line one.\n  Line two.\n",
 			want: []string{`terms@1:1 "Line one.\nLine two.\n"@1:8`},
@@ -60,6 +66,11 @@ func TestParseLocale(t *testing.T) {
 			name: "alias",
 			src:  "hi: &hi \"Hi\"\nhello: *hi\n",
 			want: []string{`hi@1:1 "Hi"@1:5`, `hello@2:1 "Hi"@1:5`},
+		},
+		{
+			name: "alias to a mapping",
+			src:  "a: &a\n  b: \"x\"\nc: *a\n",
+			want: []string{`a.b@2:3 "x"@2:6`, `c.b@2:3 "x"@2:6`},
 		},
 	}
 
@@ -123,6 +134,16 @@ func TestParseLocale_errors(t *testing.T) {
 			want: []string{`en.yaml:3:3: error: invalid key "<<": ` + badKey},
 		},
 		{
+			name: "alias to an ancestor",
+			src:  "a: &a\n  b: *a\n",
+			want: []string{`en.yaml:2:3: error: key "a.b" refers to itself through an alias`},
+		},
+		{
+			name: "alias to an ancestor further up",
+			src:  "a: &a\n  b:\n    c: *a\n",
+			want: []string{`en.yaml:3:5: error: key "a.b.c" refers to itself through an alias`},
+		},
+		{
 			name: "duplicate key",
 			src:  "a: x\nb: y\na: z\n",
 			want: []string{`en.yaml:3:1: error: key "a" is written twice`},
@@ -166,6 +187,11 @@ func TestParseLocale_errors(t *testing.T) {
 				"en.yaml:1:11: error: \"{\" opens a placeholder that is not closed\n" +
 					"  write \"{{\" for a literal \"{\"",
 			},
+		},
+		{
+			name: "control character",
+			src:  "greeting: \"Hel\\0lo\"\n",
+			want: []string{"en.yaml:1:11: error: a message cannot hold U+0000, a control character"},
 		},
 		{
 			name: "plural without other",

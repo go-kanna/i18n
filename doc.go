@@ -3,9 +3,12 @@
 //
 // kanna-i18n compiles a directory of locale files into a package of typed
 // constructors, each returning a Message, together with the translations as
-// Catalogs. Nothing is parsed at run time: what is left here is what depends on
-// run-time values, which is choosing the language, picking the CLDR plural form
-// a count needs, and formatting numbers the way the language writes them.
+// Catalogs. Catalog, Entry, Plural, Template, and Segment are what it writes
+// those as, in literals, and CountParam the name it gives the count of a plural
+// message: a program need build none of them. Nothing is parsed at run time:
+// what is left here is what depends on run-time values, which is choosing the
+// language, picking the CLDR plural form a count needs, and formatting numbers
+// the way the language writes them.
 //
 // The generator itself is the command in cmd/kanna-i18n.
 package i18n

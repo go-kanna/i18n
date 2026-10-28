@@ -166,6 +166,15 @@ func TestAnalyze_diagnostics(t *testing.T) {
 			},
 		},
 		{
+			name:     "a Localizer the destination declares",
+			locales:  map[string]string{"en": "greeting: \"Hi\"\n"},
+			declared: []string{"Localizer@extra.go:5"},
+			want: []string{
+				"messages/extra.go:5: error: Localizer is declared here, and the generated file declares it too\n" +
+					"  rename it",
+			},
+		},
+		{
 			// The translations would be blamed for what the default lacks.
 			name: "translations left alone while the default is broken",
 			locales: map[string]string{

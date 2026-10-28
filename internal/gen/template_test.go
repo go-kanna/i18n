@@ -67,6 +67,7 @@ func TestParseTemplate(t *testing.T) {
 			wantSegments: []string{"{user_name2}"},
 			wantParams:   []string{"user_name2:string"},
 		},
+		{name: "a line break and a tab", src: "a\n\tb", wantSegments: []string{`"a\n\tb"`}},
 	}
 
 	for _, tt := range tests {
@@ -131,6 +132,21 @@ func TestParseTemplate_errors(t *testing.T) {
 			name: "two kinds",
 			src:  "{x:int} and {x:number}",
 			want: []string{"error: placeholder x is written as both int and number"},
+		},
+		{
+			name: "a control character",
+			src:  "a\x00b",
+			want: []string{"error: a message cannot hold U+0000, a control character"},
+		},
+		{
+			name: "a carriage return",
+			src:  "a\rb",
+			want: []string{"error: a message cannot hold U+000D, a control character"},
+		},
+		{
+			name: "a byte order mark",
+			src:  "a\uFEFFb",
+			want: []string{"error: a message cannot hold U+FEFF, a byte order mark"},
 		},
 		{
 			name: "every mistake that can be told apart",

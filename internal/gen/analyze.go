@@ -44,16 +44,21 @@ type message struct {
 }
 
 // analyze builds the model from def, the catalog of the default language, and
-// checks every other of catalogs against it. A constructor may not take a name
-// in declared, the top-level names the destination package declares already,
-// each with where.
+// checks every other of catalogs against it. Neither a constructor nor the
+// Localizer may take a name in declared, the top-level names the destination
+// package declares already, each with where.
 //
 // The model holds whatever passed. It is only good to generate from when no
 // error is reported: a translation that does not fit the default language
 // would otherwise wait for the first request to meet it.
 func analyze(def catalog, catalogs []catalog, declared map[string]token.Position) (model, []diag.Diag) {
-	messages, diags := constructors(def, declared)
-	if diag.HasErrors(diags) {
+	var diags []diag.Diag
+	if at, ok := declared[localizerFunc]; ok {
+		diags = append(diags, diag.Errorf(at, "%s is declared here, and the generated file declares it too", localizerFunc).
+			WithHints("rename it"))
+	}
+	messages, ds := constructors(def, declared)
+	if diags = append(diags, ds...); diag.HasErrors(diags) {
 		// The rest would be checked against messages that are not all there.
 		return model{}, diags
 	}

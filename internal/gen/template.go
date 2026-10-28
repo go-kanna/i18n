@@ -5,6 +5,7 @@ import (
 	"go/token"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/go-kanna/internal/diag"
 	"github.com/go-kanna/internal/suggest"
@@ -55,6 +56,10 @@ func (k kind) String() string { return kinds[k] }
 // Braces are doubled for literal ones, "{{" and "}}". A placeholder written
 // without a kind takes one written for the same name elsewhere in src.
 func parseTemplate(src string, pos token.Position) (template, []diag.Diag) {
+	if r, what, ok := invalidRune(src); ok {
+		return template{}, []diag.Diag{diag.Errorf(pos, "a message cannot hold %U, %s", r, what)}
+	}
+
 	var (
 		t     template
 		text  strings.Builder
@@ -108,6 +113,23 @@ func parseTemplate(src string, pos token.Position) (template, []diag.Diag) {
 		t.segments = append(t.segments, segment{text: text.String()})
 	}
 	return t, diags
+}
+
+// invalidRune returns the first rune of src that a message cannot hold, and
+// what it is: a control character, line breaks and tabs apart, or a byte order
+// mark. The doc comment of the constructor quotes the message as written, and
+// either would stop the generated file from parsing, blamed on that file
+// rather than on the locale file.
+func invalidRune(src string) (rune, string, bool) {
+	for _, r := range src {
+		switch {
+		case r == '\uFEFF':
+			return r, "a byte order mark", true
+		case unicode.IsControl(r) && r != '\n' && r != '\t':
+			return r, "a control character", true
+		}
+	}
+	return 0, "", false
 }
 
 // parsePlaceholder parses body, what a placeholder holds between its braces,

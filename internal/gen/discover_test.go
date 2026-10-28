@@ -16,11 +16,14 @@ func writeFiles(t *testing.T, dir string, files map[string]string) {
 
 	for name, body := range files {
 		path := filepath.Join(dir, name)
+		if name[len(name)-1] == '/' {
+			if err := os.MkdirAll(path, 0o750); err != nil {
+				t.Fatal(err)
+			}
+			continue
+		}
 		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 			t.Fatal(err)
-		}
-		if name[len(name)-1] == '/' {
-			continue
 		}
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
@@ -90,6 +93,7 @@ func TestReadLocales(t *testing.T) {
 			files: map[string]string{
 				"locales/en.yaml":               msg,
 				"locales/ja/messages.yaml":      msg,
+				"locales/fr.yml/":               "",
 				"locales/translations/de.yaml":  msg,
 				"locales/scripts/convert.sh":    "",
 				"locales/empty/":                "",
@@ -98,6 +102,7 @@ func TestReadLocales(t *testing.T) {
 			},
 			wantCatalogs: []string{"en en.yaml 1"},
 			wantDiags: []string{
+				"locales/fr.yml: error: a language is one file, not a directory\n  merge the files in it into fr.yaml",
 				"locales/ja: error: a language is one file, not a directory\n  merge the files in it into ja.yaml",
 				"locales/translations: warning: skipped: locale files are read from the locale directory alone\n" +
 					"  move them into locales",
@@ -230,7 +235,25 @@ func TestDefaultCatalog(t *testing.T) {
 		{name: "itself", lang: "en", tags: []string{"en-GB", "en", "ja"}, want: "en"},
 		{name: "a region of it", lang: "en", tags: []string{"ja", "en-US"}, want: "en-US"},
 		{name: "a script of it", lang: "zh", tags: []string{"zh-Hant"}, want: "zh-Hant"},
-		{name: "the language of a region", lang: "en-US", tags: []string{"ja", "en"}, want: "en"},
+		// A default written with a region is served by its own file alone.
+		{
+			name: "the language of a region",
+			lang: "en-US",
+			tags: []string{"ja", "en"},
+			wantDiags: []string{
+				"locales: error: no locale file for en-US, the default language\n" +
+					"  there are locale files for ja, en; choose one with -default",
+			},
+		},
+		{
+			name: "another region of the language",
+			lang: "en-US",
+			tags: []string{"en-GB"},
+			wantDiags: []string{
+				"locales: error: no locale file for en-US, the default language\n" +
+					"  there are locale files for en-GB; choose one with -default",
+			},
+		},
 		{
 			name: "one of two regions",
 			lang: "en",

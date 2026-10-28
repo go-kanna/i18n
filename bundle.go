@@ -66,13 +66,15 @@ func chain(l locale, byTag map[language.Tag]locale, def locale) []locale {
 	return c
 }
 
-// Localizer returns a Localizer for the language of b that best matches langs.
+// Localizer returns a Localizer for the language of b closest to langs.
 //
 // Each of langs is a language tag, such as "ja" or "pt-BR", or an
 // Accept-Language value, such as "fr, ja;q=0.8". They are tried in order until
-// one matches a language of b, so a language the user picked can come before
-// the ones the browser asks for. What does not parse is skipped, and when
-// nothing matches, the default language is used.
+// one is close to a language of b, as CLDR judges closeness: en-US is served
+// by en, and nb by da when b has Danish but no Norwegian. So a language the
+// user picked can come before the ones the browser asks for. A value that does
+// not parse is skipped as a whole, one bad entry and all, and when nothing
+// matches, the default language is used.
 func (b Bundle) Localizer(langs ...string) Localizer {
 	if b.matcher == nil {
 		return Localizer{}
