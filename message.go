@@ -20,5 +20,6 @@ type Arg struct {
 }
 
 // CountParam is the argument whose value, an int, picks the form of a plural
-// message.
+// message. It is exported for kanna-i18n, which names the count of every plural
+// constructor so.
 const CountParam = "count"

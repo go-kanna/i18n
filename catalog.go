@@ -1,10 +1,9 @@
 package i18n
 
-// The types below are what kanna-i18n compiles a locale file into, written into
-// the generated code as literals. The generator has checked them against every
-// other language already, so nothing here checks them again.
-
-// Catalog holds the messages of one language.
+// Catalog holds the messages of one language. It and what it is made of, Entry,
+// Plural, Template, and Segment, are what kanna-i18n compiles a locale file
+// into, written into the generated code as literals; the generator has checked
+// them against every other language already, so nothing here checks them again.
 type Catalog struct {
 	// Lang is the language as a BCP 47 tag, such as "en" or "pt-BR".
 	Lang    string
