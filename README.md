@@ -147,8 +147,8 @@ with a warning, so a stray `config.yaml` does not fail the run, and names starti
 
 Nested mappings become dot-joined keys, and keys become constructor names: `user.not_found` generates `UserNotFound()`.
 Each part of a key matches `[a-z][a-z0-9_]*`. Two keys that generate one name, or a key that generates a name the
-destination package already declares, stop generation; so does the key `localizer`, whose name the generated file takes
-for itself.
+destination package already declares, stop generation; so do the key `localizer`, whose name the generated file takes
+for itself, and a `Localizer` the destination package declares by hand.
 
 Every value is a string or a mapping. Quote a value that YAML would read as something else, such as `"true"` or
 `"123"`.
