@@ -210,6 +210,55 @@ language, and is rendered under the plural rules and number format of the langua
 fails: the zero `Localizer` renders every message as its key, and a placeholder whose argument is missing renders as
 `{name}`.
 
+## Error codes
+
+kanna-validate and go-kanna/validated report a broken rule as a code with params, such as `too_long` with `count`, and
+leave its text to the caller, as Rails' `errors.details` does. `i18n.Coded` turns one into a message keyed by the code
+under a prefix, with the params as its arguments sorted by name, so the texts live in the locale files beside every
+other message:
+
+```yaml
+# locales/en.yaml
+errors:
+  blank: "can't be blank"
+  too_long: "is too long (maximum is {count:int} characters)"
+  greater_than_or_equal_to: "must be greater than or equal to {count}"
+  confirmation: "doesn't match {attribute}"
+```
+
+```go
+loc := messages.Localizer(lang)
+if errs, ok := errors.AsType[validate.Errors](err); ok {
+	for _, fe := range errs {
+		fmt.Println(fe.Field, loc.Localize(i18n.Coded("errors", fe.Code(), fe.Params())))
+	}
+}
+// name can't be blank
+// age must be greater than or equal to 18
+// tags[1] is too long (maximum is 20 characters)
+// confirm doesn't match password
+```
+
+The field is a path such as `tags[1]`, or `base` for an error about the struct as a whole, and how it reads in front of
+the text is the caller's to decide. A `*validated.Error` on its own, from building or decoding a value, has `Code` and
+`Params` as well.
+
+These keys are messages like any other. kanna-i18n generates a constructor for each, `ErrorsTooLong(count int)` among
+them, which nothing needs to call. A code the chosen language lacks falls back as any message does, and one no language
+has renders as its key, `errors.taken`, so a rule without a text shows rather than vanishes.
+
+The kind of a placeholder types the generated constructor and nothing else: the runtime never sees it, so the params of
+a code render by their Go type whatever the locale file says, and a kind that does not match fails nothing.
+`{count:number}` does not write an int in the language's number format, nor does `{count:int}` keep a float64 out of
+it. What a count's type does decide is the plural form: only an int picks one, and any other count takes `other`. The
+lengths of `too_short`, `too_long`, and `wrong_length` are always an int, so write them `{count:int}`, or in plural
+forms. The bound of `greater_than` and the other numeric codes has the type of the field it was checked on, an int, a
+float64, or an int64, so leave its kind off and its message single.
+
+A param that is neither a string, an int, nor a float64 renders through fmt, as `i18n.Arg` says: a `time.Time` a hook
+passed as `count` reads `2000-01-01 00:00:00 +0000 UTC`. To write one otherwise, replace it in the params before
+building the message; `Params` of either package returns a copy.
+
 ## Validation
 
 Errors stop generation:
