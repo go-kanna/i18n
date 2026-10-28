@@ -96,6 +96,10 @@ type localeParser struct {
 	path    string
 	entries []entry
 	diags   []diag.Diag
+	// open are the mappings being read, the outermost first. An alias to one of
+	// them would be read without end: the YAML package rejects such a cycle when
+	// decoding into Go values, but not into nodes.
+	open []*yaml.Node
 }
 
 func (p *localeParser) pos(n *yaml.Node) token.Position {
@@ -108,6 +112,7 @@ func (p *localeParser) report(d diag.Diag) {
 
 // mapping reads the keys of n, each after prefix.
 func (p *localeParser) mapping(n *yaml.Node, prefix string) {
+	p.open = append(p.open, n)
 	seen := make(map[string]bool, len(n.Content)/2)
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], resolve(n.Content[i+1])
@@ -131,6 +136,10 @@ func (p *localeParser) mapping(n *yaml.Node, prefix string) {
 			}
 			continue
 		}
+		if slices.Contains(p.open, v) {
+			p.report(diag.Errorf(p.pos(k), "key %q refers to itself through an alias", key))
+			continue
+		}
 		switch forms := pluralForms(v); {
 		case forms != nil && len(v.Content) > 2:
 			p.report(diag.Errorf(p.pos(k), "key %q holds plural forms and other keys beside them", key).
@@ -143,6 +152,7 @@ func (p *localeParser) mapping(n *yaml.Node, prefix string) {
 			p.mapping(v, key)
 		}
 	}
+	p.open = p.open[:len(p.open)-1]
 }
 
 // plural reads n, the forms of the plural message key, written at k.

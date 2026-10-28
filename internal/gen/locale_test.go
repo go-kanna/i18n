@@ -61,6 +61,11 @@ func TestParseLocale(t *testing.T) {
 			src:  "hi: &hi \"Hi\"\nhello: *hi\n",
 			want: []string{`hi@1:1 "Hi"@1:5`, `hello@2:1 "Hi"@1:5`},
 		},
+		{
+			name: "alias to a mapping",
+			src:  "a: &a\n  b: \"x\"\nc: *a\n",
+			want: []string{`a.b@2:3 "x"@2:6`, `c.b@2:3 "x"@2:6`},
+		},
 	}
 
 	for _, tt := range tests {
@@ -121,6 +126,16 @@ func TestParseLocale_errors(t *testing.T) {
 			name: "merge key",
 			src:  "a: &a {b: x}\nc:\n  <<: *a\n",
 			want: []string{`en.yaml:3:3: error: invalid key "<<": ` + badKey},
+		},
+		{
+			name: "alias to an ancestor",
+			src:  "a: &a\n  b: *a\n",
+			want: []string{`en.yaml:2:3: error: key "a.b" refers to itself through an alias`},
+		},
+		{
+			name: "alias to an ancestor further up",
+			src:  "a: &a\n  b:\n    c: *a\n",
+			want: []string{`en.yaml:3:5: error: key "a.b.c" refers to itself through an alias`},
 		},
 		{
 			name: "duplicate key",
