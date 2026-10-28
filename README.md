@@ -151,7 +151,7 @@ destination package already declares, stop generation; so do the key `localizer`
 for itself, and a `Localizer` the destination package declares by hand.
 
 Every value is a string or a mapping. Quote a value that YAML would read as something else, such as `"true"` or
-`"123"`.
+`"123"`. A message cannot hold a control character other than a line break or a tab, nor a byte order mark.
 
 ### Plural forms
 

@@ -183,6 +183,11 @@ func TestParseLocale_errors(t *testing.T) {
 			},
 		},
 		{
+			name: "control character",
+			src:  "greeting: \"Hel\\0lo\"\n",
+			want: []string{"en.yaml:1:11: error: a message cannot hold U+0000, a control character"},
+		},
+		{
 			name: "plural without other",
 			src:  "items:\n  plural:\n    one: \"One\"\n",
 			want: []string{"en.yaml:3:5: error: plural forms of key \"items\" lack \"other\"\n" +
