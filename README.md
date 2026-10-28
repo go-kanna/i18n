@@ -212,8 +212,8 @@ fails: the zero `Localizer` renders every message as its key, and a placeholder 
 
 ## Error codes
 
-kanna-validate and go-kanna/validated report a broken rule as a code with params, such as `too_long` with `count`, and
-leave its text to the caller, as Rails' `errors.details` does. `i18n.Coded` turns one into a message keyed by the code
+kanna-validate and kanna-value report a broken rule as a code with params, such as `too_long` with `count`, and leave
+its text to the caller, as Rails' `errors.details` does. `i18n.Coded` turns one into a message keyed by the code
 under a prefix, with the params as its arguments sorted by name, so the texts live in the locale files beside every
 other message:
 
@@ -240,8 +240,8 @@ if errs, ok := errors.AsType[validate.Errors](err); ok {
 ```
 
 The field is a path such as `tags[1]`, or `base` for an error about the struct as a whole, and how it reads in front of
-the text is the caller's to decide. A `*validated.Error` on its own, from building or decoding a value, has `Code` and
-`Params` as well.
+the text is the caller's to decide. A `*rule.Error` of go-kanna/value on its own, from building or decoding a value
+type, has `Code` and `Params` as well.
 
 These keys are messages like any other. kanna-i18n generates a constructor for each, `ErrorsTooLong(count int)` among
 them, which nothing needs to call. A code the chosen language lacks falls back as any message does, and one no language
