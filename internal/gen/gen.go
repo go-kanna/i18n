@@ -56,6 +56,13 @@ func run(dir string, cfg config, _ []string) ([]output.Change, []diag.Diag) {
 		return nil, diags
 	}
 
+	// The code calling the messages is loaded before the run writes them, as it
+	// is, to be checked once they are in place.
+	set, check, ds := callers(dest)
+	if diags = append(diags, ds...); diag.HasErrors(diags) {
+		return nil, diags
+	}
+
 	pkg, err := output.PackageName(dest, outputFile, cfg.pkg)
 	if err != nil {
 		return nil, append(diags, diag.Errorf(token.Position{Filename: dest}, "%v", err))
@@ -74,7 +81,13 @@ func run(dir string, cfg config, _ []string) ([]output.Change, []diag.Diag) {
 		return nil, append(diags, diag.Errorf(token.Position{Filename: path}, "generated code does not parse: %v", err))
 	}
 	diags = append(diags, output.MissingRequires(path, f.ModuleImports())...)
-	return []output.Change{{Path: path, Data: src}}, diags
+	changes := []output.Change{{Path: path, Data: src}}
+	if check {
+		if rds := checked(set, dest, changes); len(rds) > 0 {
+			return nil, slices.Concat(diags, rds, set.SetAsideWarnings())
+		}
+	}
+	return changes, diags
 }
 
 // absolute returns path, given on the command line, as an absolute path, taking

@@ -320,6 +320,13 @@ and one that disagrees with them is an error. A run that succeeds prints nothing
 [Validation](#validation) lists, such as the keys a translation lacks. A file named `i18n_gen.go` without the
 generated-code header is never touched.
 
+Code calling the messages is checked with what a run is about to write in place: the destination's own, and that of the
+packages of its module importing it, tests included, which a run loads through the go command. A key removed or renamed,
+or a placeholder changed, stops the run while code still calls the message as it was, and so does a mistake that a call
+to a message added hid; nothing is written then. An error that code had before the run does not stop it, but one in the
+destination does, the output's own package, as does a destination that does not parse. Code may call a message before
+the first run has written it.
+
 ## Example
 
 [`example`](example) renders the same messages in English and Japanese — plurals, locale-formatted numbers, a fallback
