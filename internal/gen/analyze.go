@@ -151,6 +151,9 @@ func entryParams(e entry) ([]param, []diag.Diag) {
 	return params, diags
 }
 
+// attributesPrefix starts the keys naming fields for i18n.FullMessages.
+const attributesPrefix = "errors.attributes."
+
 // check checks c, the catalog of a translation, against the messages of the
 // default language def, by key.
 func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
@@ -159,8 +162,10 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 	for _, e := range c.entries {
 		seen[e.key] = true
 		m, ok := byKey[e.key]
-		if !ok && i18n.IsBuiltin(e.key) {
-			// A built-in text, which a translation may override alone.
+		if !ok && (i18n.IsBuiltin(e.key) || strings.HasPrefix(e.key, attributesPrefix)) {
+			// A built-in text, which a translation may override alone, or the
+			// name of a field, which i18n.FullMessages writes out of its path
+			// where the default language names none.
 			continue
 		}
 		if !ok {

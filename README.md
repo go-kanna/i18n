@@ -257,7 +257,8 @@ errors:
 - A problem with the value as a whole, at `base`, reads as its message alone.
 - A message is looked up in the reader's language, the application's text first and then the built-in one, before the
   parent and default languages: a reader of Japanese gets the built-in Japanese rather than the application's English.
-  A translation may override a built-in text that the default language leaves as it is.
+  A translation may override a built-in text that the default language leaves as it is, and name a field that the
+  default language leaves to be written out: Japanese names `title`, while English reads `Title` anyway.
 
 Anything with `Path`, `Code`, and `Params` methods renders: this package imports no validation package. For one message
 without its field, `i18n.Coded("errors.messages", code, params)` builds it. A `*rule.Error` of go-kanna/value, from
