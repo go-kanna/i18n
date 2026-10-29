@@ -53,6 +53,9 @@ func NewBundle(def Catalog, rest ...Catalog) Bundle {
 
 // chain lists where a message of l is looked up: l itself, then each of its
 // parent languages with a catalog (en-GB, then en), then the default language.
+// The built-in texts of a language follow the last of its catalogs, so that a
+// catalog overrides them, and a reader of Japanese is shown the built-in
+// Japanese before the default language's own text.
 func chain(l locale, byTag map[language.Tag]locale, def locale) []locale {
 	c := []locale{l}
 	for t := l.tag.Parent(); t != language.Und; t = t.Parent() {
@@ -63,8 +66,29 @@ func chain(l locale, byTag map[language.Tag]locale, def locale) []locale {
 	if !slices.ContainsFunc(c, func(x locale) bool { return x.tag == def.tag }) {
 		c = append(c, def)
 	}
-	return c
+
+	var out []locale
+	for i, x := range c {
+		out = append(out, x)
+		base, _ := x.tag.Base()
+		if b, ok := builtinLocales[base]; ok &&
+			!slices.ContainsFunc(c[i+1:], func(y locale) bool { yb, _ := y.tag.Base(); return yb == base }) {
+			out = append(out, b)
+		}
+	}
+	return out
 }
+
+// builtinLocales are the catalogs of builtin, by base language.
+var builtinLocales = func() map[language.Base]locale {
+	m := make(map[language.Base]locale, len(builtin))
+	for _, c := range builtin {
+		l, _ := newLocale(c) // the languages of builtin are valid tags
+		base, _ := l.tag.Base()
+		m[base] = l
+	}
+	return m
+}()
 
 // Localizer returns a Localizer for the language of b closest to langs.
 //

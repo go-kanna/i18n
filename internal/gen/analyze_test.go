@@ -130,6 +130,16 @@ func TestAnalyze_diagnostics(t *testing.T) {
 			},
 		},
 		{
+			// A built-in text needs no key in the default language to be
+			// overridden in another; a key next to it still does.
+			name: "a translation overriding a built-in text",
+			locales: map[string]string{
+				"en": "greeting: \"Hello!\"\n",
+				"ja": "greeting: \"こんにちは！\"\nerrors:\n  messages:\n    blank: \"は必須です\"\n    blnk: \"は必須です\"\n",
+			},
+			want: []string{"locales/ja.yaml:5:5: error: key \"errors.messages.blnk\" is not in en"},
+		},
+		{
 			name: "two kinds in two forms",
 			locales: map[string]string{
 				"en": "items:\n  plural:\n    one: \"{x:int}\"\n    other: \"{x:number}\"\n",

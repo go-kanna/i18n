@@ -210,42 +210,61 @@ language, and is rendered under the plural rules and number format of the langua
 fails: the zero `Localizer` renders every message as its key, and a placeholder whose argument is missing renders as
 `{name}`.
 
-## Error codes
+## Validation errors
 
 kanna-validate and kanna-value report a broken rule as a code with params, such as `too_long` with `count`, and leave
-its text to the caller, as Rails' `errors.details` does. `i18n.Coded` turns one into a message keyed by the code
-under a prefix, with the params as its arguments sorted by name, so the texts live in the locale files beside every
-other message:
-
-```yaml
-# locales/en.yaml
-errors:
-  blank: "can't be blank"
-  too_long: "is too long (maximum is {count:int} characters)"
-  greater_than_or_equal_to: "must be greater than or equal to {count}"
-  confirmation: "doesn't match {attribute}"
-```
+its text to the caller, as Rails' `errors.details` does. `i18n.FullMessages` renders them as sentences naming their
+fields, and `i18n.ErrorMessages` by field, as Rails' `errors.full_messages` and `errors.messages` do:
 
 ```go
 loc := messages.Localizer(lang)
 if errs, ok := errors.AsType[validate.Errors](err); ok {
-	for _, fe := range errs {
-		fmt.Println(fe.Field, loc.Localize(i18n.Coded("errors", fe.Code(), fe.Params())))
+	for _, m := range i18n.FullMessages(loc, errs) {
+		fmt.Println(m)
 	}
 }
-// name can't be blank
-// age must be greater than or equal to 18
-// tags[1] is too long (maximum is 20 characters)
-// confirm doesn't match password
+// Title can't be blank
+// Tags is too long (maximum is 20 characters)
+// Confirm doesn't match Password
+//
+// タイトルを入力してください
+// Tagsは20文字以内で入力してください
+// 確認用パスワードとパスワードの入力が一致しません
 ```
 
-The field is a path such as `tags[1]`, or `base` for an error about the struct as a whole, and how it reads in front of
-the text is the caller's to decide. A `*rule.Error` of go-kanna/value on its own, from building or decoding a value
-type, has `Code` and `Params` as well.
+The texts of every code kanna-validate and kanna-value report are built in, in English as Rails writes them and in
+Japanese as rails-i18n does. A locale file names the fields, overrides any built-in text, and adds the codes of rules of
+your own:
 
-These keys are messages like any other. kanna-i18n generates a constructor for each, `ErrorsTooLong(count int)` among
-them, which nothing needs to call. A code the chosen language lacks falls back as any message does, and one no language
-has renders as its key, `errors.taken`, so a rule without a text shows rather than vanishes.
+```yaml
+# locales/ja.yaml
+errors:
+  attributes:
+    title: タイトル
+    confirm: 確認用パスワード
+    password: パスワード
+    address:
+      zip: 郵便番号
+  messages:
+    corp_domain: は会社のアドレスにしてください
+```
+
+- `errors.format` puts a field's name and its message together: `"{attribute} {message}"` in English,
+  `"{attribute}{message}"` in Japanese.
+- A field is named by `errors.attributes`: its path with any index dropped, `address.zip` or `tags` for `tags[1]`,
+  then the last part of it, `zip`, and failing both, the last part written out: `Completed at` for `completed_at`. A
+  `confirmation`'s `attribute`, the field it is checked against, is named the same way.
+- A problem with the value as a whole, at `base`, reads as its message alone.
+- A message is looked up in the reader's language, the application's text first and then the built-in one, before the
+  parent and default languages: a reader of Japanese gets the built-in Japanese rather than the application's English.
+  A translation may override a built-in text that the default language leaves as it is.
+
+Anything with `Path`, `Code`, and `Params` methods renders: this package imports no validation package. For one message
+without its field, `i18n.Coded("errors.messages", code, params)` builds it. A `*rule.Error` of go-kanna/value, from
+building or decoding a value type, has `Code` and `Params` as well.
+
+A code no language has renders as its key, `errors.messages.taken`, so a rule without a text shows rather than
+vanishes.
 
 The kind of a placeholder types the generated constructor and nothing else: the runtime never sees it, so the params of
 a code render by their Go type whatever the locale file says, and a kind that does not match fails nothing.
