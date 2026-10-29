@@ -29,10 +29,11 @@ type Arg struct {
 // constructor so.
 const CountParam = "count"
 
-// Coded returns the message keyed prefix.code, such as "errors.too_long", with
-// params as its arguments. It is how an error reported as a code and params,
-// as kanna-validate and kanna-value report one, gets its text from the locale
-// files. An empty prefix leaves the key code alone.
+// Coded returns the message keyed prefix.code, such as
+// "errors.messages.too_long", with params as its arguments. It is how an error
+// reported as a code and params, as kanna-validate and kanna-value report one,
+// gets its text from the locale files; FullMessages and ErrorMessages use it
+// for every problem they render. An empty prefix leaves the key code alone.
 //
 // The arguments come sorted by name, so that one map always makes the same
 // Message. Each renders by its type, as Arg says: the kind a locale file gives

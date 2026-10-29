@@ -60,6 +60,9 @@ linters:
           - gocyclo      # Each table case adds branches, so cyclomatic complexity climbs naturally and isn't a quality signal there.
           - gosmopolitan # Translations are the subject under test, so their scripts belong in the expected strings.
           - maintidx     # Same as gocyclo: table-driven tests grow long by design and the maintainability index is not a useful signal there.
+      - path: builtin\.go
+        linters:
+          - gosmopolitan # The built-in texts are translations, written in their own scripts.
 
 issues:
   max-issues-per-linter: 0

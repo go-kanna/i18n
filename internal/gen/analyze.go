@@ -159,6 +159,10 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 	for _, e := range c.entries {
 		seen[e.key] = true
 		m, ok := byKey[e.key]
+		if !ok && i18n.IsBuiltin(e.key) {
+			// A built-in text, which a translation may override alone.
+			continue
+		}
 		if !ok {
 			d := diag.Errorf(e.pos, "key %q is not in %s", e.key, def)
 			if s, ok := suggest.Closest(e.key, slices.Sorted(maps.Keys(byKey))); ok {
