@@ -21,7 +21,8 @@ type Bundle struct {
 }
 
 // NewBundle builds a Bundle from def, the catalog of the default language, and
-// rest, those of the other languages.
+// rest, those of the other languages. It copies what the catalogs hold, so a
+// change to one afterwards changes nothing the Bundle renders.
 //
 // It panics on a language that is not a valid tag and on two catalogs of one
 // language. Generated code passes neither, so meeting one means a Bundle put

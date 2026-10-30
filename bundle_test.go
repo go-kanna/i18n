@@ -251,3 +251,40 @@ func TestNewBundle_panics(t *testing.T) {
 		})
 	}
 }
+
+// A Bundle keeps what its catalogs held when it was built: changing their map,
+// a template, or a plural form afterwards changes nothing it renders.
+func TestNewBundle_CopiesCatalogs(t *testing.T) {
+	t.Parallel()
+
+	greeting := i18n.Template{text("Hello!")}
+	plural := &i18n.Plural{
+		One:   i18n.Template{param("count"), text(" item")},
+		Other: i18n.Template{param("count"), text(" items")},
+	}
+	entries := map[string]i18n.Entry{
+		"greeting":    {Single: greeting},
+		"items_count": {Plural: plural},
+	}
+	b := i18n.NewBundle(i18n.Catalog{Lang: "en", Entries: entries})
+	l := b.Localizer("en")
+
+	greeting[0] = text("changed through the template")
+	plural.Other[1] = text(" changed through the plural")
+	entries["greeting"] = single(text("changed through the map"))
+	entries["added"] = single(text("added through the map"))
+
+	tests := []struct {
+		m    i18n.Message
+		want string
+	}{
+		{m: msg("greeting"), want: "Hello!"},
+		{m: msg("items_count", i18n.Arg{Name: "count", Value: 2}), want: "2 items"},
+		{m: msg("added"), want: "added"},
+	}
+	for _, tt := range tests {
+		if got := l.Localize(tt.m); got != tt.want {
+			t.Errorf("Localize(%s) = %q, want %q", tt.m.Key, got, tt.want)
+		}
+	}
+}
