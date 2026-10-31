@@ -23,19 +23,14 @@ import (
 // cannot all be told. Any other error of the load is what the code was like
 // before the run, which checked holds what the run changes against.
 func callers(dest string) (packages.Set, bool, []diag.Diag) {
-	root := moduleRoot(dest)
-	if root == "" {
-		return packages.Set{}, false, nil
-	}
-	data, err := os.ReadFile(filepath.Join(root, "go.mod")) //nolint:gosec // the go.mod of the destination
-	if err != nil {
-		return packages.Set{}, false, []diag.Diag{diag.Errorf(token.Position{Filename: root}, "%v", err)}
-	}
-	rel, err := filepath.Rel(root, dest)
+	destPath, err := importPath(dest)
 	if err != nil {
 		return packages.Set{}, false, []diag.Diag{diag.Errorf(token.Position{Filename: dest}, "%v", err)}
 	}
-	destPath := path.Join(modfile.ModulePath(data), filepath.ToSlash(rel))
+	if destPath == "" {
+		return packages.Set{}, false, nil
+	}
+	root := moduleRoot(dest)
 
 	patterns, err := packages.Dependents(root, destPath)
 	if err != nil {
@@ -59,6 +54,24 @@ func callers(dest string) (packages.Set, bool, []diag.Diag) {
 		return set, false, append(stop, set.SetAsideWarnings()...)
 	}
 	return set, true, nil
+}
+
+// importPath returns the import path of dest, which need not exist yet, in the
+// module that holds it, or "" for none.
+func importPath(dest string) (string, error) {
+	root := moduleRoot(dest)
+	if root == "" {
+		return "", nil
+	}
+	data, err := os.ReadFile(filepath.Join(root, "go.mod")) //nolint:gosec // the go.mod of the destination
+	if err != nil {
+		return "", err //nolint:wrapcheck // a *fs.PathError, which names the file
+	}
+	rel, err := filepath.Rel(root, dest)
+	if err != nil {
+		return "", err //nolint:wrapcheck // it names both paths
+	}
+	return path.Join(modfile.ModulePath(data), filepath.ToSlash(rel)), nil
 }
 
 // checked type-checks again the code callers loaded, with changes in place, and
