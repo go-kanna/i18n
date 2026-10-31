@@ -256,8 +256,9 @@ errors:
   then the last part of it, `zip`, and failing both, the last part written out: `Completed at` for `completed_at`. A
   `confirmation`'s `attribute`, the field it is checked against, is named the same way.
 - A problem with the value as a whole, at `base`, reads as its message alone.
-- A message is looked up in the reader's language, the application's text first and then the built-in one, before the
-  parent and default languages: a reader of Japanese gets the built-in Japanese rather than the application's English.
+- A message is looked up in the reader's language and its parents, the application's text first and then the built-in
+  one, before the default language: a reader of Japanese gets the built-in Japanese rather than the application's
+  English.
   A translation may override a built-in text that the default language leaves as it is, and name a field that the
   default language leaves to be written out: Japanese names `title`, while English reads `Title` anyway.
 
