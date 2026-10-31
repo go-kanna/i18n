@@ -189,7 +189,7 @@ generation.
 
 Parameters follow the order in which they first appear, `count` first and the forms of a plural message read in the
 order of their categories, `zero` to `other`, and are named in camelCase: `{user_name}` becomes `userName`. A name Go
-reserves gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes `errorArg`.
+reserves or predeclares gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes `errorArg`.
 
 ## Languages
 
