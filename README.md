@@ -10,7 +10,7 @@
 kanna-i18n compiles a directory of locale files into Go: a typed constructor for every message, and the translations
 themselves, so nothing is parsed or read at run time.
 
-Part of the [kanna](https://github.com/go-kanna/kanna) family of code generators. Requires Go 1.26.
+Part of the [kanna](https://go-kanna.github.io/) family of code generators. Requires Go 1.26.
 
 ## Install
 
