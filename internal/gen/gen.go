@@ -40,7 +40,8 @@ func Command() cli.Command[config] {
 			fs.StringVar(&cfg.pkg, "package", "",
 				"call the package `name` when the destination has no Go files yet (default: the directory's name)")
 		},
-		Run: run,
+		Run:  run,
+		Deps: reportDeps,
 	}
 }
 
