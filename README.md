@@ -5,6 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/go-kanna/i18n.svg)](https://pkg.go.dev/github.com/go-kanna/i18n)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/tag/go-kanna/i18n?label=release&sort=semver)](https://github.com/go-kanna/i18n/tags)
+[![日本語](https://img.shields.io/badge/lang-%E6%97%A5%E6%9C%AC%E8%AA%9E-blue.svg)](README.ja.md)
 
 kanna-i18n compiles a directory of locale files into Go: a typed constructor for every message, and the translations
 themselves, so nothing is parsed or read at run time.
