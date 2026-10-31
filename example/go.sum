@@ -1,7 +1,7 @@
-github.com/go-kanna/i18n v0.0.7 h1:mrN0kecDBD3EeCnCHXdjoqpB4hd67K8LZPZ3HFP+/G8=
-github.com/go-kanna/i18n v0.0.7/go.mod h1:ERUm0BYvbakn6QBlMdHfhWQm3nQRWAEuuwgh83TZtCY=
-github.com/go-kanna/internal v0.0.12 h1:1K0Hur/5CqKAL//pzHvAx4V/fwmBbNvYpSHAcn9gOF4=
-github.com/go-kanna/internal v0.0.12/go.mod h1:Df477EkeFmw5w4hFNoBGUZfZJfgKJnaemuReERxK7to=
+github.com/go-kanna/i18n v0.0.9 h1:0kNBPgSOIFyImjCltWWNBMuyuzUwbAU7u3Uho6lwTmM=
+github.com/go-kanna/i18n v0.0.9/go.mod h1:/+2Xwj2tUnNfJtwoUN1CDoiuhRh4+QKXEjG8crzHhdg=
+github.com/go-kanna/internal v0.0.15 h1:4nEuskaqLP21oBy+vei8ibh9yqk4CPJsLrdd/AQNjrA=
+github.com/go-kanna/internal v0.0.15/go.mod h1:Df477EkeFmw5w4hFNoBGUZfZJfgKJnaemuReERxK7to=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
