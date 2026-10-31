@@ -6,10 +6,10 @@ toolchain go1.26.9
 
 tool github.com/go-kanna/i18n/cmd/kanna-i18n
 
-require github.com/go-kanna/i18n v0.0.9
+require github.com/go-kanna/i18n v0.0.10
 
 require (
-	github.com/go-kanna/internal v0.0.15 // indirect
+	github.com/go-kanna/internal v0.0.16 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
