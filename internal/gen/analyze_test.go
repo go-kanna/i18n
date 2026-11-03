@@ -62,6 +62,24 @@ func TestAnalyze(t *testing.T) {
 			wantCatalogs:     []string{"en"},
 		},
 		{
+			// Rewording the text cannot swap two arguments of one type.
+			name:             "placeholders in name order, whatever the text",
+			def:              "en",
+			locales:          map[string]string{"en": "full_name: \"{last}, {first}\"\n"},
+			wantConstructors: []string{"FullName(first string, last string)"},
+			wantCatalogs:     []string{"en"},
+		},
+		{
+			name: "the count first, then the placeholders in name order",
+			def:  "en",
+			locales: map[string]string{
+				"en": "items:\n  plural:\n    one: \"{price:number} for {name}, one item\"\n" +
+					"    other: \"{price:number} for {name}, {count} items\"\n",
+			},
+			wantConstructors: []string{"Items(count int, name string, price number)"},
+			wantCatalogs:     []string{"en"},
+		},
+		{
 			name: "a kind written in one form",
 			def:  "en",
 			locales: map[string]string{
@@ -74,7 +92,7 @@ func TestAnalyze(t *testing.T) {
 			name:             "Go names",
 			def:              "en",
 			locales:          map[string]string{"en": "user:\n  name_of: \"{type} {error} {user_name} {i18n}\"\n"},
-			wantConstructors: []string{"UserNameOf(typeArg string, errorArg string, userName string, i18n string)"},
+			wantConstructors: []string{"UserNameOf(errorArg string, i18n string, typeArg string, userName string)"},
 			wantCatalogs:     []string{"en"},
 		},
 		{
@@ -152,7 +170,7 @@ func TestAnalyze_diagnostics(t *testing.T) {
 			name:    "two placeholders, one Go name",
 			locales: map[string]string{"en": "t: \"{user_name} {user__name}\"\n"},
 			want: []string{
-				`locales/en.yaml:1:1: error: placeholders user_name and user__name of key "t" both become the parameter userName`,
+				`locales/en.yaml:1:1: error: placeholders user__name and user_name of key "t" both become the parameter userName`,
 			},
 		},
 		{

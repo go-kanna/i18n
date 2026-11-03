@@ -40,7 +40,7 @@ func TestGenerated(t *testing.T) {
 		{name: "missing from ja", loc: ja, msg: messages.UserDeleted("Alice"), want: "User Alice has been deleted."},
 		{name: "Accept-Language", loc: messages.Localizer("fr, ja;q=0.8"), msg: messages.Greeting(), want: "こんにちは！"},
 		{name: "names kept clear", loc: names.Localizer(), msg: names.Items(2, "you"), want: "2 items for you"},
-		{name: "reserved names", loc: names.Localizer(), msg: names.Kinds("a", "b"), want: "a of b"},
+		{name: "reserved names", loc: names.Localizer(), msg: names.Kinds("b", "a"), want: "a of b"},
 	}
 
 	for _, tt := range tests {
