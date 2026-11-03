@@ -118,61 +118,30 @@ func baseOf(tag language.Tag) (language.Base, bool) {
 }
 
 // defaultCatalog picks the catalog of lang, the default language, among
-// catalogs read from dir: the catalog of lang itself or, when lang is a bare
-// language without one, of a variant of lang, such as en-US.yaml for en. A
-// catalog of another language is never taken, however close: the default
-// language defines what every constructor says. Nor does one stand in for a
-// default written with a region or script: en.yaml or en-GB.yaml passing for
-// en-US would hide that en-US.yaml is missing.
-//
-// When several variants could be meant, CLDR's matching picks one, with a
-// warning.
+// catalogs read from dir: the one of lang exactly. Another catalog of the
+// language never stands in for it, en-US.yaml for en nor en.yaml for en-US:
+// adding the catalog of lang would then change what every constructor says
+// without a word. A catalog of another language is never taken, however close.
 func defaultCatalog(dir string, catalogs []catalog, lang language.Tag) (catalog, []diag.Diag) {
+	if i := slices.IndexFunc(catalogs, func(c catalog) bool { return c.tag == lang }); i >= 0 {
+		return catalogs[i], nil
+	}
+
 	base, ok := baseOf(lang)
-	bare := ok && lang.String() == base.String()
-	var variants []catalog
-	for _, c := range catalogs {
-		if c.tag == lang {
-			return c, nil
-		}
-		if b, _ := baseOf(c.tag); bare && b == base {
-			variants = append(variants, c)
+	have := make([]string, len(catalogs))
+	var same []language.Tag
+	for i, c := range catalogs {
+		have[i] = c.tag.String()
+		if b, _ := baseOf(c.tag); ok && b == base {
+			same = append(same, c.tag)
 		}
 	}
-
-	at := token.Position{Filename: dir}
-	tags := make([]language.Tag, len(variants))
-	for i, c := range variants {
-		tags[i] = c.tag
+	d := diag.Errorf(token.Position{Filename: dir}, "no locale file for %s, the default language", lang)
+	if len(same) == 1 {
+		return catalog{}, []diag.Diag{d.WithHints(fmt.Sprintf("did you mean -default %s?", same[0]))}
 	}
-	switch len(variants) {
-	case 0:
-		have := make([]string, len(catalogs))
-		for i, c := range catalogs {
-			have[i] = c.tag.String()
-		}
-		d := diag.Errorf(at, "no locale file for %s, the default language", lang)
-		return catalog{}, []diag.Diag{d.WithHints(
-			fmt.Sprintf("there are locale files for %s; choose one with -default", strings.Join(have, ", ")))}
-	case 1:
-		return variants[0], nil
-	default:
-		_, i, _ := language.NewMatcher(tags).Match(lang)
-		d := diag.Warningf(at, "the default language %s could be %s; taking %s", lang, orList(tags), tags[i])
-		return variants[i], []diag.Diag{d.WithHints(fmt.Sprintf("pass -default %s to say which", tags[i]))}
-	}
-}
-
-// orList spells tags as "a or b", or "a, b, or c".
-func orList(tags []language.Tag) string {
-	s := make([]string, len(tags))
-	for i, t := range tags {
-		s[i] = t.String()
-	}
-	if len(s) == 2 {
-		return s[0] + " or " + s[1]
-	}
-	return strings.Join(s[:len(s)-1], ", ") + ", or " + s[len(s)-1]
+	return catalog{}, []diag.Diag{d.WithHints(
+		fmt.Sprintf("there are locale files for %s; choose one with -default", strings.Join(have, ", ")))}
 }
 
 // isDir reports whether path is a directory, following a symbolic link, so

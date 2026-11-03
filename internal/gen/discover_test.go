@@ -233,16 +233,33 @@ func TestDefaultCatalog(t *testing.T) {
 		wantDiags []string
 	}{
 		{name: "itself", lang: "en", tags: []string{"en-GB", "en", "ja"}, want: "en"},
-		{name: "a region of it", lang: "en", tags: []string{"ja", "en-US"}, want: "en-US"},
-		{name: "a script of it", lang: "zh", tags: []string{"zh-Hant"}, want: "zh-Hant"},
-		// A default written with a region is served by its own file alone.
+		{name: "itself, with a region", lang: "en-US", tags: []string{"en", "en-US"}, want: "en-US"},
+		// Adding en.yaml would take the place of en-US.yaml.
+		{
+			name: "a region of it",
+			lang: "en",
+			tags: []string{"ja", "en-US"},
+			wantDiags: []string{
+				"locales: error: no locale file for en, the default language\n" +
+					"  did you mean -default en-US?",
+			},
+		},
+		{
+			name: "a script of it",
+			lang: "zh",
+			tags: []string{"zh-Hant"},
+			wantDiags: []string{
+				"locales: error: no locale file for zh, the default language\n" +
+					"  did you mean -default zh-Hant?",
+			},
+		},
 		{
 			name: "the language of a region",
 			lang: "en-US",
 			tags: []string{"ja", "en"},
 			wantDiags: []string{
 				"locales: error: no locale file for en-US, the default language\n" +
-					"  there are locale files for ja, en; choose one with -default",
+					"  did you mean -default en?",
 			},
 		},
 		{
@@ -251,27 +268,16 @@ func TestDefaultCatalog(t *testing.T) {
 			tags: []string{"en-GB"},
 			wantDiags: []string{
 				"locales: error: no locale file for en-US, the default language\n" +
-					"  there are locale files for en-GB; choose one with -default",
+					"  did you mean -default en-GB?",
 			},
 		},
 		{
-			name: "one of two regions",
+			name: "two regions",
 			lang: "en",
 			tags: []string{"en-GB", "en-US"},
-			want: "en-US",
 			wantDiags: []string{
-				"locales: warning: the default language en could be en-GB or en-US; taking en-US\n" +
-					"  pass -default en-US to say which",
-			},
-		},
-		{
-			name: "one of three regions",
-			lang: "en",
-			tags: []string{"en-AU", "en-GB", "en-US"},
-			want: "en-US",
-			wantDiags: []string{
-				"locales: warning: the default language en could be en-AU, en-GB, or en-US; taking en-US\n" +
-					"  pass -default en-US to say which",
+				"locales: error: no locale file for en, the default language\n" +
+					"  there are locale files for en-GB, en-US; choose one with -default",
 			},
 		},
 		{

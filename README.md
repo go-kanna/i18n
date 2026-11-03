@@ -196,10 +196,9 @@ reserves or predeclares gets `Arg` appended: `{type}` becomes `typeArg`, and `{e
 ## Languages
 
 The default language — `-default`, `en` unless said otherwise — defines the constructors: their names, parameters, and
-types come from its file, and every other file is checked against it. A file for a regional variant serves a bare
-default when there is no exact one: `-default en` takes `en-US.yaml` in the absence of `en.yaml`, and warns when
-`en-GB.yaml` could have been meant as well. A default written with a region or script, such as `-default en-US`, is
-served by its own file alone: neither `en.yaml` nor `en-GB.yaml` stands in for it.
+types come from its file, and every other file is checked against it. It is served by its own file alone:
+`-default en` takes `en.yaml`, and `-default en-US` takes `en-US.yaml`. Another file of the language does not stand in
+for it, so a locale directory holding `en-US.yaml` but no `en.yaml` needs `-default en-US`.
 
 `Localizer` takes language tags such as `"ja"` or `"pt-BR"`, Accept-Language values such as `"fr, ja;q=0.8"`, or both,
 and tries them in order, value by value, until one is close to a language the package was generated with, as CLDR
@@ -302,7 +301,7 @@ Warnings do not:
   it renders the fallback until the translation lands.
 - plural forms a language uses that a message does not provide, and forms a message provides that its language never
   takes, such as `one` in Japanese, which no count renders with
-- an ambiguous default language, and files skipped in the locale directory
+- files skipped in the locale directory
 
 A misspelled key, placeholder, plural category, or kind comes with the name it was probably meant to be.
 
