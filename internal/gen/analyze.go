@@ -69,6 +69,7 @@ func analyze(def catalog, catalogs []catalog, declared map[string]token.Position
 		byKey[msg.key] = msg
 	}
 	diags = append(diags, missingForms(def)...)
+	diags = append(diags, unusedForms(def)...)
 	for _, c := range catalogs {
 		if c.tag == def.tag {
 			continue
@@ -197,6 +198,7 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 		}
 	}
 	diags = append(diags, missingForms(c)...)
+	diags = append(diags, unusedForms(c)...)
 
 	var missing []string
 	for _, key := range slices.Sorted(maps.Keys(byKey)) {
@@ -256,6 +258,24 @@ func missingForms(c catalog) []diag.Diag {
 			}
 			diags = append(diags, diag.Warningf(e.pos, "key %q lacks the plural %s %s, so those counts render with %q",
 				e.key, noun, andList(missing), "other"))
+		}
+	}
+	return diags
+}
+
+// unusedForms warns of each plural form of c that its language never takes: the
+// plural rules of the language have no such category, so no count renders with
+// it. zero is taken for a count of 0 in every language, and other always is.
+func unusedForms(c catalog) []diag.Diag {
+	used := usedCategories(c.tag)
+	var diags []diag.Diag
+	for _, e := range c.entries {
+		for _, f := range e.forms {
+			if f.category == "" || f.category == "zero" || f.category == "other" || slices.Contains(used, f.category) {
+				continue
+			}
+			diags = append(diags, diag.Warningf(f.pos,
+				"key %q has the plural form %s, which %s never takes; no count renders with it", e.key, f.category, c.tag))
 		}
 	}
 	return diags
