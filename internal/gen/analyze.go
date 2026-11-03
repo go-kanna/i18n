@@ -59,10 +59,24 @@ func analyze(def catalog, catalogs []catalog, declared map[string]token.Position
 	}
 	messages, ds := constructors(def, declared)
 	diags = append(diags, ds...)
+	byKey := make(map[string]message, len(def.entries))
+	for _, msg := range messages {
+		byKey[msg.key] = msg
+	}
 	for _, e := range def.entries {
+		if !reserved(e.key) {
+			continue
+		}
+		diags = append(diags, kindsRead(e)...)
 		if fixed(e.key) {
 			diags = append(diags, fixedParams(e)...)
+			continue
 		}
+		// The code of a rule of the application's own, whose placeholders the
+		// default language names for the translations. Only their names
+		// matter: no constructor takes them.
+		params, _ := entryParams(e)
+		byKey[e.key] = message{entry: e, params: params}
 	}
 	if diag.HasErrors(diags) {
 		// The rest would be checked against messages that are not all there.
@@ -70,10 +84,6 @@ func analyze(def catalog, catalogs []catalog, declared map[string]token.Position
 	}
 
 	m := model{messages: messages, catalogs: []catalog{def}}
-	byKey := make(map[string]message, len(messages))
-	for _, msg := range messages {
-		byKey[msg.key] = msg
-	}
 	diags = append(diags, missingForms(def)...)
 	diags = append(diags, unusedForms(def)...)
 	for _, c := range catalogs {
@@ -87,7 +97,8 @@ func analyze(def catalog, catalogs []catalog, declared map[string]token.Position
 	return m, diags
 }
 
-// constructors makes a constructor of each message of def.
+// constructors makes a constructor of each message of def, but those the
+// runtime renders validation errors with.
 func constructors(def catalog, declared map[string]token.Position) ([]message, []diag.Diag) {
 	var (
 		messages []message
@@ -95,6 +106,9 @@ func constructors(def catalog, declared map[string]token.Position) ([]message, [
 		byFn     = make(map[string]string, len(def.entries))
 	)
 	for _, e := range def.entries {
+		if reserved(e.key) {
+			continue
+		}
 		fn := funcName(e.key)
 		switch prev, ok := byFn[fn]; {
 		case ok:
@@ -164,8 +178,39 @@ func entryParams(e entry) ([]param, []diag.Diag) {
 	return params, diags
 }
 
-// attributesPrefix starts the keys naming fields for i18n.FullMessages.
-const attributesPrefix = "errors.attributes."
+// The keys i18n.FullMessages renders a validation error with: how a field's name
+// and its message are put together, the names of fields, and the message of
+// each code.
+const (
+	formatKey        = "errors.format"
+	attributesPrefix = "errors.attributes."
+	messagesPrefix   = "errors.messages."
+)
+
+// reserved reports whether key is one i18n.FullMessages reads, whose
+// placeholders the runtime fills with what a validation error carries, so that
+// no constructor renders it.
+func reserved(key string) bool {
+	return key == formatKey || strings.HasPrefix(key, attributesPrefix) || strings.HasPrefix(key, messagesPrefix)
+}
+
+// kindsRead reports each kind e writes out, whose key is reserved: the runtime
+// fills its placeholders with the values as they are, so a kind decides
+// nothing.
+func kindsRead(e entry) []diag.Diag {
+	var diags []diag.Diag
+	for _, f := range e.forms {
+		for _, p := range f.params {
+			if p.explicit {
+				diags = append(diags, diag.Errorf(f.pos, "placeholder {%s:%s} of key %q has a kind, which nothing reads",
+					p.name, p.kind, e.key).
+					WithHints(fmt.Sprintf("i18n.FullMessages fills it with the value the error carries, as it is: write {%s}",
+						p.name)))
+			}
+		}
+	}
+	return diags
+}
 
 // check checks c, the catalog of a translation, against the messages of the
 // default language def, by key.
@@ -174,6 +219,9 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 	seen := make(map[string]bool, len(c.entries))
 	for _, e := range c.entries {
 		seen[e.key] = true
+		if reserved(e.key) {
+			diags = append(diags, kindsRead(e)...)
+		}
 		if fixed(e.key) {
 			// A built-in text, which a translation may override alone, in the
 			// forms its own language tells apart, or the name of a field, which

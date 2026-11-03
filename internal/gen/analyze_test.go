@@ -96,6 +96,19 @@ func TestAnalyze(t *testing.T) {
 			wantCatalogs:     []string{"en"},
 		},
 		{
+			// i18n.FullMessages renders them with what a validation error
+			// carries; the other keys under errors are the application's own.
+			name: "the keys FullMessages reads",
+			def:  "en",
+			locales: map[string]string{
+				"en": "errors:\n  format: \"{attribute}: {message}\"\n  attributes:\n    title: Title\n" +
+					"  messages:\n    too_long: \"is over {count}\"\n    corp_domain: \"is not ours\"\n" +
+					"  not_found: \"Not found\"\n",
+			},
+			wantConstructors: []string{"ErrorsNotFound()"},
+			wantCatalogs:     []string{"en"},
+		},
+		{
 			name:             "what the destination declares besides",
 			def:              "en",
 			locales:          map[string]string{"en": "greeting: \"Hi\"\n"},
@@ -187,6 +200,43 @@ func TestAnalyze_diagnostics(t *testing.T) {
 					"is not in the built-in text it overrides, which fills none",
 				"locales/ja.yaml:7:12: error: parameter \"name\" of key \"errors.attributes.title\" is not filled: " +
 					"the name of a field takes none",
+			},
+		},
+		{
+			// The runtime fills them with the values as they are.
+			name: "a kind in the keys FullMessages reads",
+			locales: map[string]string{
+				"en": "greeting: \"Hello!\"\nerrors:\n  messages:\n    too_long: \"is over {count:int}\"\n",
+			},
+			want: []string{
+				"locales/en.yaml:4:15: error: placeholder {count:int} of key \"errors.messages.too_long\" has a kind, " +
+					"which nothing reads\n  i18n.FullMessages fills it with the value the error carries, as it is: write {count}",
+			},
+		},
+		{
+			name: "a kind in a translation of the keys FullMessages reads",
+			locales: map[string]string{
+				"en": "greeting: \"Hello!\"\nerrors:\n  messages:\n    corp_domain: \"is not {domain}\"\n",
+				"ja": "greeting: \"こんにちは！\"\nerrors:\n  messages:\n    corp_domain: \"は{domain:string}ではありません\"\n",
+			},
+			want: []string{
+				"locales/ja.yaml:4:18: error: placeholder {domain:string} of key \"errors.messages.corp_domain\" has a kind, " +
+					"which nothing reads\n  i18n.FullMessages fills it with the value the error carries, as it is: write {domain}",
+			},
+		},
+		{
+			// A code of the application's own is checked against the default
+			// language, which no built-in text names.
+			name: "a code of the application's own in a translation",
+			locales: map[string]string{
+				"en": "greeting: \"Hello!\"\nerrors:\n  messages:\n    corp_domain: \"is not {domain}\"\n",
+				"ja": "greeting: \"こんにちは！\"\nerrors:\n  messages:\n    corp_domain: \"は{domian}ではありません\"\n",
+				"de": "greeting: \"Hallo!\"\n",
+			},
+			want: []string{
+				"locales/de.yaml: warning: missing keys: errors.messages.corp_domain",
+				"locales/ja.yaml:4:18: error: parameter \"domian\" of key \"errors.messages.corp_domain\" is not in en\n" +
+					"  did you mean \"domain\"?",
 			},
 		},
 		{
