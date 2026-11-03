@@ -180,3 +180,21 @@ func TestIsBuiltin(t *testing.T) {
 		}
 	}
 }
+
+func TestBuiltinParams(t *testing.T) {
+	t.Parallel()
+
+	for key, want := range map[string][]string{
+		"errors.format":                {"attribute", "message"},
+		"errors.messages.too_long":     {"count"},
+		"errors.messages.confirmation": {"attribute"},
+		"errors.messages.blank":        nil,
+	} {
+		if got, ok := i18n.BuiltinParams(key); !ok || !slices.Equal(got, want) {
+			t.Errorf("BuiltinParams(%q) = %q, %t; want %q, true", key, got, ok, want)
+		}
+	}
+	if got, ok := i18n.BuiltinParams("greeting"); ok || got != nil {
+		t.Errorf("BuiltinParams(greeting) = %q, %t; want nil, false", got, ok)
+	}
+}

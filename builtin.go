@@ -1,6 +1,9 @@
 package i18n
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // builtin holds the texts every Bundle knows without a locale file: how a
 // validation error reads, errors.format and errors.messages.<code>, for the
@@ -66,6 +69,36 @@ func IsBuiltin(key string) bool {
 		}
 	}
 	return false
+}
+
+// BuiltinParams returns, sorted, the names of the placeholders the built-in text
+// key fills in any language, and false when key is no built-in text. It is
+// exported for kanna-i18n, which holds a text overriding it to them.
+func BuiltinParams(key string) ([]string, bool) {
+	var (
+		names []string
+		found bool
+	)
+	for _, c := range builtin {
+		e, ok := c.Entries[key]
+		if !ok {
+			continue
+		}
+		found = true
+		forms := []Template{e.Single}
+		if p := e.Plural; p != nil {
+			forms = append(forms, p.Zero, p.One, p.Two, p.Few, p.Many, p.Other)
+		}
+		for _, t := range forms {
+			for _, seg := range t {
+				if seg.Param != "" {
+					names = append(names, seg.Param)
+				}
+			}
+		}
+	}
+	slices.Sort(names)
+	return slices.Compact(names), found
 }
 
 // single is an Entry of one form, written as a locale file writes it.
