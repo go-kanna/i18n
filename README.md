@@ -165,7 +165,8 @@ it. At the root of a file, where there is no message for it to be the forms of, 
 The constructor takes `count int` first, and the count picks the form under the plural rules of the language rendering
 it: 1 is `one` in English, while Japanese has no `one` and uses `other` for every count. A plural message that lacks a
 form its language uses gets a warning, because those counts would render with `other`: Russian with only `other` lacks
-`one`, `few`, and `many`, while Japanese with only `other` lacks nothing.
+`one`, `few`, and `many`, while Japanese with only `other` lacks nothing. So does a form its language never takes, such
+as `one` in Japanese, which no count renders with.
 
 A count of 0 renders with `zero` whenever the message has it, as in Rails, so `zero: "You have no items."` in `en.yaml`
 works although English has no zero category. In a language whose rules do have one, such as Latvian, `zero` takes the
@@ -296,7 +297,8 @@ Warnings do not:
 
 - keys a translation lacks. The runtime falls back, so the generated code never breaks when a translation lags behind;
   it renders the fallback until the translation lands.
-- plural forms a language uses that a message does not provide
+- plural forms a language uses that a message does not provide, and forms a message provides that its language never
+  takes, such as `one` in Japanese, which no count renders with
 - an ambiguous default language, and files skipped in the locale directory
 
 A misspelled key, placeholder, plural category, or kind comes with the name it was probably meant to be.

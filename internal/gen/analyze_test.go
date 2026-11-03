@@ -264,6 +264,20 @@ func TestAnalyze_diagnostics(t *testing.T) {
 					"so those counts render with \"other\"",
 			},
 		},
+		{
+			name: "plural forms a language does not tell apart",
+			locales: map[string]string{
+				"en": "items:\n  plural:\n    zero: \"no items\"\n    one: \"{count} item\"\n    few: \"{count} items\"\n" +
+					"    other: \"{count} items\"\n",
+				"ja": "items:\n  plural:\n    zero: \"なし\"\n    one: \"{count}個\"\n    other: \"{count}個\"\n",
+			},
+			want: []string{
+				`locales/en.yaml:5:10: warning: key "items" has the plural form few, which en never takes; ` +
+					"no count renders with it",
+				`locales/ja.yaml:4:10: warning: key "items" has the plural form one, which ja never takes; ` +
+					"no count renders with it",
+			},
+		},
 	}
 
 	for _, tt := range tests {
