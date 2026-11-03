@@ -118,8 +118,9 @@ func constructors(def catalog, declared map[string]token.Position) ([]message, [
 }
 
 // entryParams returns the parameters of the constructor of e: the
-// placeholders of its forms, each once, in the order they first appear. A
-// plural message takes its count first, as an int.
+// placeholders of its forms, each once, in name order, so that rewording the
+// text cannot swap two arguments of one type. A plural message takes its count
+// first, as an int.
 func entryParams(e entry) ([]param, []diag.Diag) {
 	var params []param
 	if e.plural() {
@@ -138,6 +139,11 @@ func entryParams(e entry) ([]param, []diag.Diag) {
 			}
 		}
 	}
+	rest := params
+	if e.plural() {
+		rest = params[1:]
+	}
+	slices.SortFunc(rest, func(a, b param) int { return cmp.Compare(a.name, b.name) })
 
 	byGo := make(map[string]string, len(params))
 	for _, p := range params {

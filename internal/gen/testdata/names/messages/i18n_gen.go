@@ -20,10 +20,10 @@ func Items(count2 int, i18n3 string) i18n2.Message {
 // Kinds returns the message "kinds":
 //
 //	{type} of {error}
-func Kinds(typeArg string, errorArg string) i18n2.Message {
+func Kinds(errorArg string, typeArg string) i18n2.Message {
 	return i18n2.Message{Key: "kinds", Args: []i18n2.Arg{
-		{Name: "type", Value: typeArg},
 		{Name: "error", Value: errorArg},
+		{Name: "type", Value: typeArg},
 	}}
 }
 

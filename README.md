@@ -187,8 +187,9 @@ plural form, say — and two different kinds are an error. The default language 
 translation may leave the kind off, as `ja.yaml` above does for the price, and one that writes a different kind stops
 generation.
 
-Parameters follow the order in which they first appear, `count` first and the forms of a plural message read in the
-order of their categories, `zero` to `other`, and are named in camelCase: `{user_name}` becomes `userName`. A name Go
+Parameters come in the order of the names of their placeholders, a plural message's `count` first, so that rewording a
+text cannot swap two arguments of one type: `"{last}, {first}"` makes `FullName(first string, last string)`, as
+`"{first} {last}"` does. They are named in camelCase: `{user_name}` becomes `userName`. A name Go
 reserves or predeclares gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes `errorArg`.
 
 ## Languages

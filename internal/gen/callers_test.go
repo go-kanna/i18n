@@ -76,7 +76,7 @@ func TestCommand_keepsWhatCodeStillCalls(t *testing.T) {
 			name: "a placeholder added",
 			edit: func(t *testing.T, dir string) { editLocales(t, dir, "{name}", "{name} {age:int}") },
 			want: "messages/welcome.go:5:59: error: not enough arguments in call to Hello\n\thave (string)\n" +
-				"\twant (string, int)\n",
+				"\twant (int, string)\n",
 		},
 		{
 			name: "a key called from a test alone removed",
