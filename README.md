@@ -269,16 +269,17 @@ Anything with `Path`, `Code`, and `Params` methods renders: this package imports
 without its field, `i18n.Coded("errors.messages", code, params)` builds it. A `*rule.Error` of go-kanna/value, from
 building or decoding a value type, has `Code` and `Params` as well.
 
+`errors.format`, `errors.attributes`, and `errors.messages` are what these functions read, so no constructor is
+generated for them. Other keys under `errors`, such as `errors.not_found`, are messages like any other.
+
 A code no language has renders as its key, `errors.messages.taken`, so a rule without a text shows rather than
 vanishes.
 
-The kind of a placeholder types the generated constructor and nothing else: the runtime never sees it, so the params of
-a code render by their Go type whatever the locale file says, and a kind that does not match fails nothing.
-`{count:number}` does not write an int in the language's number format, nor does `{count:int}` keep a float64 out of
-it. What a count's type does decide is the plural form: only an int picks one, and any other count takes `other`. The
-lengths of `too_short`, `too_long`, and `wrong_length` are always an int, so write them `{count:int}`, or in plural
-forms. The bound of `greater_than` and the other numeric codes has the type of the field it was checked on, an int, a
-float64, or an int64, so leave its kind off and its message single.
+The params of a code render by their Go type. A kind written in those keys, such as `{count:int}`, would decide nothing,
+and stops generation. What a count's type does decide is the plural form: only an int picks one, and any other count
+takes `other`. The lengths of `too_short`, `too_long`, and `wrong_length` are always an int, so they may be written in
+plural forms. The bound of `greater_than` and the other numeric codes has the type of the field it was checked on, an
+int, a float64, or an int64, so keep its message single.
 
 A param that is neither a string, an int, nor a float64 renders through fmt, as `i18n.Arg` says: a `time.Time` a hook
 passed as `count` reads `2000-01-01 00:00:00 +0000 UTC`. To write one otherwise, replace it in the params before
@@ -292,7 +293,7 @@ Errors stop generation:
 - a message that is plural in one language and not in the other, but for a built-in text
 - a placeholder the default language's message does not have, or one written with a different kind
 - a placeholder the built-in text a language overrides does not fill, and any in the name of a field
-- two different kinds for one placeholder within a message
+- two different kinds for one placeholder within a message, and a kind in a key `i18n.FullMessages` reads
 - a malformed file, key, or placeholder, and names that collide
 
 Warnings do not:
