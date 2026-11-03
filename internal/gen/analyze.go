@@ -58,7 +58,13 @@ func analyze(def catalog, catalogs []catalog, declared map[string]token.Position
 			WithHints("rename it"))
 	}
 	messages, ds := constructors(def, declared)
-	if diags = append(diags, ds...); diag.HasErrors(diags) {
+	diags = append(diags, ds...)
+	for _, e := range def.entries {
+		if fixed(e.key) {
+			diags = append(diags, fixedParams(e)...)
+		}
+	}
+	if diag.HasErrors(diags) {
 		// The rest would be checked against messages that are not all there.
 		return model{}, diags
 	}
@@ -167,13 +173,15 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 	seen := make(map[string]bool, len(c.entries))
 	for _, e := range c.entries {
 		seen[e.key] = true
-		m, ok := byKey[e.key]
-		if !ok && (i18n.IsBuiltin(e.key) || strings.HasPrefix(e.key, attributesPrefix)) {
-			// A built-in text, which a translation may override alone, or the
-			// name of a field, which i18n.FullMessages writes out of its path
-			// where the default language names none.
+		if fixed(e.key) {
+			// A built-in text, which a translation may override alone, in the
+			// forms its own language tells apart, or the name of a field, which
+			// i18n.FullMessages writes out of its path where the default
+			// language names none.
+			diags = append(diags, fixedParams(e)...)
 			continue
 		}
+		m, ok := byKey[e.key]
 		if !ok {
 			d := diag.Errorf(e.pos, "key %q is not in %s", e.key, def)
 			if s, ok := suggest.Closest(e.key, slices.Sorted(maps.Keys(byKey))); ok {
@@ -207,6 +215,39 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 	if len(missing) > 0 {
 		at := token.Position{Filename: c.path}
 		diags = append(diags, diag.Warningf(at, "missing keys: %s", strings.Join(missing, ", ")))
+	}
+	return diags
+}
+
+// fixed reports whether key is a built-in text or the name of a field, whose
+// placeholders the runtime fills with what it has, rather than a constructor
+// with what it takes.
+func fixed(key string) bool {
+	return i18n.IsBuiltin(key) || strings.HasPrefix(key, attributesPrefix)
+}
+
+// fixedParams checks the placeholders of e, whose key is fixed: those of the
+// built-in text it overrides, or none for the name of a field.
+func fixedParams(e entry) []diag.Diag {
+	names, builtin := i18n.BuiltinParams(e.key)
+	var diags []diag.Diag
+	for _, f := range e.forms {
+		for _, p := range f.params {
+			switch {
+			case !builtin:
+				diags = append(diags, diag.Errorf(f.pos, "parameter %q of key %q is not filled: the name of a field takes none",
+					p.name, e.key))
+			case len(names) == 0:
+				diags = append(diags, diag.Errorf(f.pos,
+					"parameter %q of key %q is not in the built-in text it overrides, which fills none", p.name, e.key))
+			case !slices.Contains(names, p.name):
+				d := diag.Errorf(f.pos, "parameter %q of key %q is not in the built-in text it overrides", p.name, e.key)
+				if s, ok := suggest.Closest(p.name, names); ok {
+					d = d.WithHints(fmt.Sprintf("did you mean %q?", s))
+				}
+				diags = append(diags, d)
+			}
+		}
 	}
 	return diags
 }

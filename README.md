@@ -261,7 +261,9 @@ errors:
   one, before the default language: a reader of Japanese gets the built-in Japanese rather than the application's
   English.
   A translation may override a built-in text that the default language leaves as it is, and name a field that the
-  default language leaves to be written out: Japanese names `title`, while English reads `Title` anyway.
+  default language leaves to be written out: Japanese names `title`, while English reads `Title` anyway. A built-in
+  text is overridden in the forms of its own language, plural or not, whatever the default language writes, and fills
+  its own placeholders, such as `{count}`; the name of a field fills none.
 
 Anything with `Path`, `Code`, and `Params` methods renders: this package imports no validation package. For one message
 without its field, `i18n.Coded("errors.messages", code, params)` builds it. A `*rule.Error` of go-kanna/value, from
@@ -287,8 +289,9 @@ building the message; `Params` of either package returns a copy.
 Errors stop generation:
 
 - a key a translation has but the default language does not
-- a message that is plural in one language and not in the other
+- a message that is plural in one language and not in the other, but for a built-in text
 - a placeholder the default language's message does not have, or one written with a different kind
+- a placeholder the built-in text a language overrides does not fill, and any in the name of a field
 - two different kinds for one placeholder within a message
 - a malformed file, key, or placeholder, and names that collide
 

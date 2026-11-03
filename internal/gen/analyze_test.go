@@ -160,6 +160,36 @@ func TestAnalyze_diagnostics(t *testing.T) {
 			want: []string{"locales/ja.yaml:5:5: error: key \"errors.messages.blnk\" is not in en"},
 		},
 		{
+			// A built-in text fills its own placeholders only, wherever it is
+			// overridden.
+			name: "a placeholder the built-in text a default language overrides does not fill",
+			locales: map[string]string{
+				"en": "errors:\n  messages:\n    too_long: \"is over {cuont}\"\n",
+			},
+			want: []string{
+				"locales/en.yaml:3:15: error: parameter \"cuont\" of key \"errors.messages.too_long\" " +
+					"is not in the built-in text it overrides\n  did you mean \"count\"?",
+			},
+		},
+		{
+			// A translation overriding a built-in text is held to it rather than
+			// to the default language, in the forms of its own language, and
+			// the name of a field fills nothing.
+			name: "placeholders a translation's built-in text or name of a field does not fill",
+			locales: map[string]string{
+				"en": "greeting: \"Hello!\"\nerrors:\n  messages:\n    too_long:\n      plural:\n" +
+					"        one: \"is over 1 letter\"\n        other: \"is over {count} letters\"\n",
+				"ja": "greeting: \"こんにちは！\"\nerrors:\n  messages:\n    too_long: \"は{count}文字まで\"\n" +
+					"    blank: \"は{attribute}に必須です\"\n  attributes:\n    title: \"{name}のタイトル\"\n",
+			},
+			want: []string{
+				"locales/ja.yaml:5:12: error: parameter \"attribute\" of key \"errors.messages.blank\" " +
+					"is not in the built-in text it overrides, which fills none",
+				"locales/ja.yaml:7:12: error: parameter \"name\" of key \"errors.attributes.title\" is not filled: " +
+					"the name of a field takes none",
+			},
+		},
+		{
 			name: "two kinds in two forms",
 			locales: map[string]string{
 				"en": "items:\n  plural:\n    one: \"{x:int}\"\n    other: \"{x:number}\"\n",
