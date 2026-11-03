@@ -318,8 +318,9 @@ kanna-i18n [flags]
 | `-default <lang>`    | language that defines the constructors and is the last fallback (default `en`)  |
 | `-destination <dir>` | directory to write `i18n_gen.go` into (default `messages`)                      |
 | `-package <name>`    | package name for a destination without Go files (default: the directory's name) |
-| `-check`             | verify the output is up to date instead of writing it                           |
+| `-check`             | verify the output is up to date instead of writing it; `KANNA_CHECK=1` does the same |
 | `-v`                 | list the file written or left unchanged                                         |
+| `-deps`              | print what a run reads and writes as JSON, for the `kanna` command, and exit    |
 | `-version`           | print the version                                                               |
 
 Paths are relative to the directory `go generate` runs in, the one holding the `//go:generate` line. The package of the
