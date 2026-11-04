@@ -189,7 +189,14 @@ if errs, ok := errors.AsType[validate.Errors](err); ok {
 // 確認用パスワードとパスワードの入力が一致しません
 ```
 
-kanna-validate と kanna-value が報告するすべてのコードの文言が組み込まれています。英語は Rails の文言、日本語は rails-i18n の文言です。ロケールファイルでは、フィールドに名前を付け、どの組み込みの文言も上書きし、独自のルールのコードを追加できます:
+kanna-validate と kanna-value が報告するすべてのコードの文言が組み込まれています。英語は Rails の文言、日本語は rails-i18n の文言です。ロケールファイルでは、フィールドに名前を付け、どの組み込みの文言も上書きし、独自のルールのコードを追加できます。独自のコードは、ほかのキーと同じく、まずデフォルト言語に書きます:
+
+```yaml
+# locales/en.yaml
+errors:
+  messages:
+    corp_domain: must be a company address
+```
 
 ```yaml
 # locales/ja.yaml
