@@ -34,8 +34,8 @@ func (p problem) Params() map[string]any { return maps.Clone(p.params) }
 //	    title: タイトル
 //	    password: パスワード
 //	    confirm: 確認用パスワード
-//	    address:
-//	      zip: 郵便番号
+//	    address: 住所
+//	    address.zip: 郵便番号
 //	  messages:
 //	    blank: は必須です
 //	    too_young_for_admin: 管理者は21歳以上にしてください
@@ -49,6 +49,7 @@ func problemBundle() i18n.Bundle {
 			"errors.attributes.title":             single(text("タイトル")),
 			"errors.attributes.password":          single(text("パスワード")),
 			"errors.attributes.confirm":           single(text("確認用パスワード")),
+			"errors.attributes.address":           single(text("住所")),
 			"errors.attributes.address.zip":       single(text("郵便番号")),
 			"errors.messages.blank":               single(text("は必須です")),
 			"errors.messages.too_young_for_admin": single(text("管理者は21歳以上にしてください")),
@@ -147,6 +148,17 @@ func TestFullMessages_leavesParams(t *testing.T) {
 	i18n.FullMessages(problemBundle().Localizer("ja"), []sharedProblem{shared})
 	if params["attribute"] != "password" {
 		t.Errorf("params[attribute] = %v after rendering, want it left as password", params["attribute"])
+	}
+}
+
+// A field and a field of it are each named by their paths.
+func TestFullMessages_namesAFieldAndItsFields(t *testing.T) {
+	t.Parallel()
+
+	got := i18n.FullMessages(problemBundle().Localizer("ja"),
+		[]problem{{path: "address", code: "blank"}, {path: "address.zip", code: "blank"}})
+	if want := []string{"住所は必須です", "郵便番号は必須です"}; !slices.Equal(got, want) {
+		t.Errorf("FullMessages = %q, want %q", got, want)
 	}
 }
 

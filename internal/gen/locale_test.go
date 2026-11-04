@@ -48,6 +48,11 @@ func TestParseLocale(t *testing.T) {
 			src:  "terms: |\n  Line one.\n  Line two.\n",
 			want: []string{`terms@1:1 "Line one.\nLine two.\n"@1:8`},
 		},
+		{
+			name: "the path of a field under errors.attributes",
+			src:  "errors:\n  attributes:\n    address: Address\n    address.zip: ZIP\n",
+			want: []string{`errors.attributes.address@3:5 "Address"@3:14`, `errors.attributes.address.zip@4:5 "ZIP"@4:18`},
+		},
 		{name: "quoted key", src: "\"greeting\": \"Hi\"\n", want: []string{`greeting@1:1 "Hi"@1:13`}},
 		{name: "empty message", src: "blank: \"\"\n", want: []string{`blank@1:1 ""@1:8`}},
 		{
@@ -97,6 +102,17 @@ func TestParseLocale_errors(t *testing.T) {
 			name: "syntax without a line",
 			src:  "\tgreeting: hi\n",
 			want: []string{"en.yaml: error: found character that cannot start any token"},
+		},
+		{
+			name: "a path elsewhere",
+			src:  "user.name: Name\n",
+			want: []string{`en.yaml:1:1: error: invalid key "user.name": ` + badKey},
+		},
+		{
+			name: "attributes nested",
+			src:  "errors:\n  attributes:\n    address:\n      zip: ZIP\n",
+			want: []string{"en.yaml:3:5: error: key \"errors.attributes.address\" holds a mapping, " +
+				"but errors.attributes names a field by its path as one key\n  write address.zip: beside address:"},
 		},
 		{
 			name: "two documents",
