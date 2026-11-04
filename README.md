@@ -159,8 +159,9 @@ Every value is a string or a mapping. Quote a value that YAML would read as some
 
 A message declares its plural forms under an explicit `plural` mapping, keyed by CLDR category (`zero`, `one`, `two`,
 `few`, `many`, `other`) and always defining `other`. Keys that merely happen to be named `one` or `other` are ordinary
-nesting: the only name a locale file cannot use freely is a mapping-valued `plural`, which takes no other keys beside
-it. At the root of a file, where there is no message for it to be the forms of, `plural` is ordinary nesting too.
+nesting: the only name a locale file cannot use freely is `plural`, which holds the forms of the message above it and
+nothing else, takes no other keys beside it, and is no message of its own. A Japanese message written as
+`plural: "{count}個"` stops generation, since its one form goes under `other`.
 
 The constructor takes `count int` first, and the count picks the form under the plural rules of the language rendering
 it: 1 is `one` in English, while Japanese has no `one` and uses `other` for every count. A plural message that lacks a
