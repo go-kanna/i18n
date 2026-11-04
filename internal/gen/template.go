@@ -173,6 +173,20 @@ func addParam(params []param, p param) ([]param, kind, bool) {
 	}
 }
 
+// validKey reports whether s is a key a locale file may write: a name, or,
+// where paths is set, the path of a field, names joined by dots.
+func validKey(s string, paths bool) bool {
+	if !paths {
+		return validName(s)
+	}
+	for part := range strings.SplitSeq(s, ".") {
+		if !validName(part) {
+			return false
+		}
+	}
+	return true
+}
+
 // validName reports whether s, a placeholder or one part of a key, matches
 // [a-z][a-z0-9_]*, which turns into a Go name with nothing lost.
 func validName(s string) bool {

@@ -111,13 +111,24 @@ func (p *localeParser) report(d diag.Diag) {
 }
 
 // mapping reads the keys of n, each after prefix.
+//
+// Under errors.attributes, a key is the path of a field, address.zip, written
+// as one key: nested, address could not name a field and hold the names of its
+// own fields at once.
 func (p *localeParser) mapping(n *yaml.Node, prefix string) {
 	p.open = append(p.open, n)
 	seen := make(map[string]bool, len(n.Content)/2)
+	paths := prefix+"." == attributesPrefix
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], resolve(n.Content[i+1])
-		if k.Kind != yaml.ScalarNode || !validName(k.Value) {
+		if k.Kind != yaml.ScalarNode || !validKey(k.Value, paths) {
 			p.report(diag.Errorf(p.pos(k), "invalid key %q: each part of a key matches [a-z][a-z0-9_]*", k.Value))
+			continue
+		}
+		if paths && v.Kind == yaml.MappingNode && len(v.Content) > 0 {
+			p.report(diag.Errorf(p.pos(k), "key %q holds a mapping, but %s names a field by its path as one key",
+				prefix+"."+k.Value, prefix).
+				WithHints(fmt.Sprintf("write %s.%s: beside %s:", k.Value, v.Content[0].Value, k.Value)))
 			continue
 		}
 		key := k.Value

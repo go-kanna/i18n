@@ -253,8 +253,8 @@ errors:
     title: タイトル
     confirm: 確認用パスワード
     password: パスワード
-    address:
-      zip: 郵便番号
+    address: 住所
+    address.zip: 郵便番号
   messages:
     corp_domain: は会社のアドレスにしてください
 ```
@@ -263,7 +263,8 @@ errors:
   `"{attribute}{message}"` in Japanese.
 - A field is named by `errors.attributes`: its path with any index dropped, `address.zip` or `tags` for `tags[1]`,
   then the last part of it, `zip`, and failing both, the last part written out: `Completed at` for `completed_at`. A
-  `confirmation`'s `attribute`, the field it is checked against, is named the same way.
+  `confirmation`'s `attribute`, the field it is checked against, is named the same way. The path is one key, so that
+  `address` and `address.zip` are named side by side; nested under `address`, they could not be, and generation stops.
 - A problem with the value as a whole, at `base`, reads as its message alone.
 - A message is looked up in the reader's language and its parents, the application's text first and then the built-in
   one, before the default language: a reader of Japanese gets the built-in Japanese rather than the application's
