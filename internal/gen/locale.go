@@ -19,7 +19,7 @@ import (
 )
 
 // pluralKey is the key of the mapping that holds the forms of a plural
-// message.
+// message, and is no message anywhere.
 const pluralKey = "plural"
 
 // categories are the CLDR plural categories, in their canonical order, as the
@@ -130,6 +130,11 @@ func (p *localeParser) mapping(n *yaml.Node, prefix string) {
 		}
 		seen[k.Value] = true
 
+		if k.Value == pluralKey {
+			// Where it holds forms, the key above it reads them.
+			p.misplacedPlural(k, v, key)
+			continue
+		}
 		if v.Kind != yaml.MappingNode {
 			if f, ok := p.form(v, key, ""); ok {
 				p.entries = append(p.entries, entry{key: key, pos: p.pos(k), forms: []form{f}})
@@ -153,6 +158,24 @@ func (p *localeParser) mapping(n *yaml.Node, prefix string) {
 		}
 	}
 	p.open = p.open[:len(p.open)-1]
+}
+
+// misplacedPlural reports pluralKey, written at k with v under it, as key, where
+// it holds no forms: at the top of a file, which has no message for them to be
+// of, or over what is no mapping.
+func (p *localeParser) misplacedPlural(k, v *yaml.Node, key string) {
+	if key == pluralKey {
+		p.report(diag.Errorf(p.pos(k),
+			"%q is the key reserved for the forms of a plural message, which the top of a file is not", pluralKey).
+			WithHints("write it under the key of the message"))
+		return
+	}
+	d := diag.Errorf(p.pos(k), "key %q holds no forms, but %q is the key reserved for the forms of a plural message",
+		key, pluralKey)
+	if v.Kind == yaml.ScalarNode && v.Tag == "!!str" {
+		d = d.WithHints(fmt.Sprintf("write them under it: %s: {other: %q}", pluralKey, v.Value))
+	}
+	p.report(d)
 }
 
 // plural reads n, the forms of the plural message key, written at k.
@@ -253,8 +276,7 @@ func (p *localeParser) syntaxError(err error) diag.Diag {
 }
 
 // pluralForms returns the mapping under pluralKey in n, or nil when there is
-// none. A string under pluralKey is an ordinary message, and category names
-// anywhere else are ordinary keys.
+// none. Category names anywhere else are ordinary keys.
 func pluralForms(n *yaml.Node) *yaml.Node {
 	for i := 0; i < len(n.Content); i += 2 {
 		if v := resolve(n.Content[i+1]); n.Content[i].Value == pluralKey && v.Kind == yaml.MappingNode {

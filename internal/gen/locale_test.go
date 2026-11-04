@@ -44,17 +44,6 @@ func TestParseLocale(t *testing.T) {
 			want: []string{`count.one@2:3 "One"@2:8`, `count.other@3:3 "Many"@3:10`},
 		},
 		{
-			name: "a string under plural is an ordinary message",
-			src:  "items:\n  plural: \"Items\"\n",
-			want: []string{`items.plural@2:3 "Items"@2:11`},
-		},
-		{
-			// There is no message at the root for the forms to be of.
-			name: "plural at the root is ordinary nesting",
-			src:  "plural:\n  one: \"One\"\n  other: \"Many\"\n",
-			want: []string{`plural.one@2:3 "One"@2:8`, `plural.other@3:3 "Many"@3:10`},
-		},
-		{
 			name: "block scalar",
 			src:  "terms: |\n  Line one.\n  Line two.\n",
 			want: []string{`terms@1:1 "Line one.\nLine two.\n"@1:8`},
@@ -198,6 +187,26 @@ func TestParseLocale_errors(t *testing.T) {
 			src:  "items:\n  plural:\n    one: \"One\"\n",
 			want: []string{"en.yaml:3:5: error: plural forms of key \"items\" lack \"other\"\n" +
 				"  other is the form a count without a form of its own renders with"},
+		},
+		{
+			name: "a string under plural",
+			src:  "items:\n  plural: \"{count} items\"\n",
+			want: []string{"en.yaml:2:3: error: key \"items.plural\" holds no forms, " +
+				"but \"plural\" is the key reserved for the forms of a plural message\n" +
+				"  write them under it: plural: {other: \"{count} items\"}"},
+		},
+		{
+			name: "nothing under plural",
+			src:  "items:\n  plural:\n",
+			want: []string{"en.yaml:2:3: error: key \"items.plural\" holds no forms, " +
+				"but \"plural\" is the key reserved for the forms of a plural message"},
+		},
+		{
+			// There is no message at the top for the forms to be of.
+			name: "plural at the top",
+			src:  "plural:\n  one: \"One\"\n  other: \"Many\"\n",
+			want: []string{"en.yaml:1:1: error: \"plural\" is the key reserved for the forms of a plural message, " +
+				"which the top of a file is not\n  write it under the key of the message"},
 		},
 		{
 			name: "plural beside other keys",
