@@ -21,6 +21,7 @@ type config struct {
 	locales     string
 	def         language.Tag
 	destination string
+	tags        string
 }
 
 // Command returns kanna-i18n.
@@ -36,6 +37,7 @@ func Command() cli.Command[config] {
 			fs.TextVar(&cfg.def, "default", language.English,
 				"take `lang` as the default language, which defines the constructors and is the last fallback")
 			fs.StringVar(&cfg.destination, "destination", "messages", "write "+outputFile+" into `dir`")
+			cli.Tags(fs, &cfg.tags)
 		},
 		Run:  run,
 		Deps: reportDeps,
@@ -56,7 +58,7 @@ func run(dir string, cfg config, _ []string) ([]output.Change, []diag.Diag) {
 
 	// The code calling the messages is loaded before the run writes them, as it
 	// is, to be checked once they are in place.
-	set, check, ds := callers(dest)
+	set, check, ds := callers(dest, cfg.tags)
 	if diags = append(diags, ds...); diag.HasErrors(diags) {
 		return nil, diags
 	}

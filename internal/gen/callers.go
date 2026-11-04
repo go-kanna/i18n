@@ -13,16 +13,17 @@ import (
 	"golang.org/x/mod/modfile"
 )
 
-// callers loads the code that calls the messages: the destination's own, and
-// that of the packages of its module importing it, tests included, with the
-// output of an earlier run set aside where it no longer compiles. It reports
+// callers loads, with the build tags tags, the code that calls the messages:
+// the destination's own, and that of the packages of its module importing it,
+// tests included, with the output of an earlier run set aside where it no
+// longer compiles. It reports
 // false when there is nothing to load, as when no module holds the destination
 // or no Go code is there yet.
 //
 // A syntax error in the destination stops the run, as the names it declares
 // cannot all be told. Any other error of the load is what the code was like
 // before the run, which checked holds what the run changes against.
-func callers(dest string) (packages.Set, bool, []diag.Diag) {
+func callers(dest, tags string) (packages.Set, bool, []diag.Diag) {
 	destPath, err := importPath(dest)
 	if err != nil {
 		return packages.Set{}, false, []diag.Diag{diag.Errorf(token.Position{Filename: dest}, "%v", err)}
@@ -45,7 +46,8 @@ func callers(dest string) (packages.Set, bool, []diag.Diag) {
 	// The output imports the runtime, which nothing loaded may yet.
 	patterns = append(patterns, runtimePath)
 
-	set, err := packages.Load(patterns, packages.Config{Dir: root, Tests: true, Regenerated: []string{outputFile}})
+	cfg := packages.Config{Dir: root, Tests: true, Tags: tags, Regenerated: []string{outputFile}}
+	set, err := packages.Load(patterns, cfg)
 	if err != nil {
 		return packages.Set{}, false, []diag.Diag{diag.Errorf(token.Position{}, "%v", err)}
 	}

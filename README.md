@@ -326,6 +326,7 @@ kanna-i18n [flags]
 | `-locales <dir>`     | directory holding the locale files (default `locales`)                          |
 | `-default <lang>`    | language that defines the constructors and is the last fallback (default `en`)  |
 | `-destination <dir>` | directory to write `i18n_gen.go` into (default `messages`)                      |
+| `-tags <list>`       | comma-separated build tags                                                      |
 | `-check`             | verify the output is up to date instead of writing it; `KANNA_CHECK=1` does the same |
 | `-v`                 | list the file written or left unchanged                                         |
 | `-deps`              | print what a run reads and writes as JSON, for the `kanna` command, and exit    |
