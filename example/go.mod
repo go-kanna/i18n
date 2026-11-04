@@ -6,7 +6,7 @@ toolchain go1.26.9
 
 tool github.com/go-kanna/i18n/cmd/kanna-i18n
 
-require github.com/go-kanna/i18n v0.0.14
+require github.com/go-kanna/i18n v0.0.15
 
 require (
 	github.com/go-kanna/internal v0.0.16 // indirect
