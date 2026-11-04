@@ -326,15 +326,14 @@ kanna-i18n [flags]
 | `-locales <dir>`     | directory holding the locale files (default `locales`)                          |
 | `-default <lang>`    | language that defines the constructors and is the last fallback (default `en`)  |
 | `-destination <dir>` | directory to write `i18n_gen.go` into (default `messages`)                      |
-| `-package <name>`    | package name for a destination without Go files (default: the directory's name) |
 | `-check`             | verify the output is up to date instead of writing it; `KANNA_CHECK=1` does the same |
 | `-v`                 | list the file written or left unchanged                                         |
 | `-deps`              | print what a run reads and writes as JSON, for the `kanna` command, and exit    |
 | `-version`           | print the version                                                               |
 
 Paths are relative to the directory `go generate` runs in, the one holding the `//go:generate` line. The package of the
-generated file is the one the Go files already in the destination declare; `-package` names it when there are none yet,
-and one that disagrees with them is an error. A run that succeeds prints nothing but its warnings, which
+generated file is the one the Go files already in the destination declare, and the directory's name when there are
+none yet: write a `doc.go` there, `package msgs`, for another name. A run that succeeds prints nothing but its warnings, which
 [Validation](#validation) lists, such as the keys a translation lacks. A file named `i18n_gen.go` without the
 generated-code header is never touched.
 

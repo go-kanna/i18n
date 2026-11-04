@@ -21,7 +21,6 @@ type config struct {
 	locales     string
 	def         language.Tag
 	destination string
-	pkg         string
 }
 
 // Command returns kanna-i18n.
@@ -37,8 +36,6 @@ func Command() cli.Command[config] {
 			fs.TextVar(&cfg.def, "default", language.English,
 				"take `lang` as the default language, which defines the constructors and is the last fallback")
 			fs.StringVar(&cfg.destination, "destination", "messages", "write "+outputFile+" into `dir`")
-			fs.StringVar(&cfg.pkg, "package", "",
-				"call the package `name` when the destination has no Go files yet (default: the directory's name)")
 		},
 		Run:  run,
 		Deps: reportDeps,
@@ -64,7 +61,7 @@ func run(dir string, cfg config, _ []string) ([]output.Change, []diag.Diag) {
 		return nil, diags
 	}
 
-	pkg, err := output.PackageName(dest, outputFile, cfg.pkg)
+	pkg, err := output.PackageName(dest, outputFile)
 	if err != nil {
 		return nil, append(diags, diag.Errorf(token.Position{Filename: dest}, "%v", err))
 	}

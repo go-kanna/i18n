@@ -27,7 +27,7 @@ func reportDeps(dir string, cfg config, _ []string) (deps.Report, error) {
 
 	catalogs, _ := readLocales(locales)
 	def, _ := defaultCatalog(locales, catalogs, cfg.def)
-	pkg, err := output.PackageName(dest, outputFile, cfg.pkg)
+	pkg, err := output.PackageName(dest, outputFile)
 	if err != nil {
 		return r, nil //nolint:nilerr // which the run reports
 	}
