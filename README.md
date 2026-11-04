@@ -237,7 +237,14 @@ if errs, ok := errors.AsType[validate.Errors](err); ok {
 
 The texts of every code kanna-validate and kanna-value report are built in, in English as Rails writes them and in
 Japanese as rails-i18n does. A locale file names the fields, overrides any built-in text, and adds the codes of rules of
-your own:
+your own, which the default language writes first, as it does every key:
+
+```yaml
+# locales/en.yaml
+errors:
+  messages:
+    corp_domain: must be a company address
+```
 
 ```yaml
 # locales/ja.yaml
