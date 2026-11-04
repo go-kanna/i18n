@@ -3,6 +3,8 @@ package i18n
 import (
 	"slices"
 	"strings"
+
+	"golang.org/x/text/language"
 )
 
 // builtin holds the texts every Bundle knows without a locale file: how a
@@ -69,6 +71,19 @@ func IsBuiltin(key string) bool {
 		}
 	}
 	return false
+}
+
+// BuiltinIn reports whether the built-in texts of the language of lang, those
+// of en for en-GB, hold key. It is exported for kanna-i18n, which does not
+// count key as missing from a catalog whose readers it renders for.
+func BuiltinIn(lang language.Tag, key string) bool {
+	base, _ := lang.Base()
+	l, ok := builtinLocales[base]
+	if !ok {
+		return false
+	}
+	_, ok = l.entries[key]
+	return ok
 }
 
 // BuiltinParams returns, sorted, the names of the placeholders the built-in text

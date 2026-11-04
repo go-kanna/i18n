@@ -5,6 +5,8 @@ import (
 	"slices"
 	"testing"
 
+	"golang.org/x/text/language"
+
 	"github.com/go-kanna/i18n"
 )
 
@@ -177,6 +179,25 @@ func TestIsBuiltin(t *testing.T) {
 	} {
 		if got := i18n.IsBuiltin(key); got != want {
 			t.Errorf("IsBuiltin(%q) = %t, want %t", key, got, want)
+		}
+	}
+}
+
+func TestBuiltinIn(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		lang, key string
+		want      bool
+	}{
+		{"ja", "errors.messages.blank", true},
+		{"en-GB", "errors.messages.blank", true},
+		{"de", "errors.messages.blank", false},
+		{"ja", "errors.messages.taken", false},
+		{"ja", "greeting", false},
+	} {
+		if got := i18n.BuiltinIn(language.MustParse(tt.lang), tt.key); got != tt.want {
+			t.Errorf("BuiltinIn(%s, %q) = %t, want %t", tt.lang, tt.key, got, tt.want)
 		}
 	}
 }

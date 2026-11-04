@@ -225,6 +225,26 @@ func TestAnalyze_diagnostics(t *testing.T) {
 			},
 		},
 		{
+			// Its readers would get the default language's text: the built-in
+			// texts name no field, there are none in German, and English ones
+			// come after the default language's own.
+			name: "keys the built-in texts do not cover",
+			locales: map[string]string{
+				"en": "greeting: \"Hello!\"\nerrors:\n  attributes:\n    title: \"Heading\"\n" +
+					"  messages:\n    blank: \"is required\"\n    corp_domain: \"is not ours\"\n",
+				"ja":    "greeting: \"こんにちは！\"\n",
+				"de":    "greeting: \"Hallo!\"\n",
+				"en-GB": "greeting: \"Hello!\"\n",
+			},
+			want: []string{
+				"locales/de.yaml: warning: missing keys: " +
+					"errors.attributes.title, errors.messages.blank, errors.messages.corp_domain",
+				"locales/en-GB.yaml: warning: missing keys: " +
+					"errors.attributes.title, errors.messages.blank, errors.messages.corp_domain",
+				"locales/ja.yaml: warning: missing keys: errors.attributes.title, errors.messages.corp_domain",
+			},
+		},
+		{
 			// A code of the application's own is checked against the default
 			// language, which no built-in text names.
 			name: "a code of the application's own in a translation",

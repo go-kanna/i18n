@@ -69,7 +69,10 @@ func analyze(def catalog, catalogs []catalog, declared map[string]token.Position
 		}
 		diags = append(diags, kindsRead(e)...)
 		if fixed(e.key) {
+			// Held to its built-in text rather than to the default language,
+			// but missing from a translation all the same.
 			diags = append(diags, fixedParams(e)...)
+			byKey[e.key] = message{entry: e}
 			continue
 		}
 		// The code of a rule of the application's own, whose placeholders the
@@ -258,7 +261,7 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 
 	var missing []string
 	for _, key := range slices.Sorted(maps.Keys(byKey)) {
-		if !seen[key] {
+		if !seen[key] && !builtinCovers(c.tag, def, key) {
 			missing = append(missing, key)
 		}
 	}
@@ -267,6 +270,17 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 		diags = append(diags, diag.Warningf(at, "missing keys: %s", strings.Join(missing, ", ")))
 	}
 	return diags
+}
+
+// builtinCovers reports whether the built-in text of key in the language of
+// tag, a translation's, renders for its readers before the text of def, the
+// default language: Japanese does for a default of English, but British
+// English does not, since the default language comes before the built-in texts
+// of its own language.
+func builtinCovers(tag, def language.Tag, key string) bool {
+	base, _ := tag.Base()
+	defBase, _ := def.Base()
+	return base != defBase && i18n.BuiltinIn(tag, key)
 }
 
 // fixed reports whether key is a built-in text or the name of a field, whose

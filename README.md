@@ -300,7 +300,8 @@ Errors stop generation:
 Warnings do not:
 
 - keys a translation lacks. The runtime falls back, so the generated code never breaks when a translation lags behind;
-  it renders the fallback until the translation lands.
+  it renders the fallback until the translation lands. A built-in text the default language overrides is not missing
+  from a translation into another language that has one: Japanese readers get the built-in Japanese.
 - plural forms a language uses that a message does not provide, and forms a message provides that its language never
   takes, such as `one` in Japanese, which no count renders with
 - files skipped in the locale directory
