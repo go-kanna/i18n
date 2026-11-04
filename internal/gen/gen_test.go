@@ -75,19 +75,20 @@ func TestCommand_flags(t *testing.T) {
 		"i10n/en.yaml": "greeting: \"Hello!\"\n",
 	})
 
-	got := execute(t, dir, "-locales", "i10n", "-default", "de", "-destination", "gen", "-package", "msg")
+	got := execute(t, dir, "-locales", "i10n", "-default", "de", "-destination", "gen")
 	if got.code != cli.ExitOK {
 		t.Fatalf("Exec() = %+v", got)
 	}
 	src := readFile(t, filepath.Join(dir, "gen", "i18n_gen.go"))
-	for _, want := range []string{"package msg\n", "var bundle = i18n.NewBundle(\n\ti18n.Catalog{Lang: \"de\""} {
+	for _, want := range []string{"package gen\n", "var bundle = i18n.NewBundle(\n\ti18n.Catalog{Lang: \"de\""} {
 		if !strings.Contains(src, want) {
 			t.Errorf("i18n_gen.go does not hold %q:\n%s", want, src)
 		}
 	}
 }
 
-// The package and the names the destination declares already are kept.
+// The package and the names the destination declares already are kept: a
+// doc.go written by hand names another package than the directory's.
 func TestCommand_destinationPackage(t *testing.T) {
 	t.Parallel()
 
@@ -105,12 +106,6 @@ func TestCommand_destinationPackage(t *testing.T) {
 		if !strings.Contains(src, want) {
 			t.Errorf("i18n_gen.go does not hold %q:\n%s", want, src)
 		}
-	}
-
-	got := execute(t, dir, "-package", "other")
-	want := "./messages: error: the Go files there declare package msgs, not other\n"
-	if got.code != cli.ExitFailure || got.err != want {
-		t.Errorf("Exec(-package other) = %+v, want stderr %q", got, want)
 	}
 }
 
