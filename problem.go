@@ -89,10 +89,6 @@ func (l Localizer) attributeName(path string) string {
 
 // has reports whether a language of l holds the message key.
 func (l Localizer) has(key string) bool {
-	for _, loc := range l.chain {
-		if _, ok := loc.entries[key]; ok {
-			return true
-		}
-	}
-	return false
+	_, _, ok := find(l.chain, key)
+	return ok
 }

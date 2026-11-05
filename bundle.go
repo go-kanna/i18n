@@ -120,10 +120,33 @@ type Localizer struct {
 //
 // Localize never fails: a message no language has renders as its key.
 func (l Localizer) Localize(m Message) string {
-	for _, loc := range l.chain {
-		if e, ok := loc.entries[m.Key]; ok {
-			return loc.render(e, m.Args)
-		}
+	if loc, e, ok := find(l.chain, m.Key); ok {
+		return loc.render(e, m.Args)
 	}
 	return m.Key
+}
+
+// Lookup returns the entries the languages of b render key with, one for each
+// language that has key, the built-in texts included; a language with none
+// renders key as itself. The entries are copies, so changing one changes
+// nothing b renders. It is exported for kanna-i18n vet, which checks the codes
+// a program reports against them.
+func Lookup(b Bundle, key string) []Entry {
+	var out []Entry
+	for _, c := range b.chains {
+		if _, e, ok := find(c, key); ok {
+			out = append(out, cloneEntry(e))
+		}
+	}
+	return out
+}
+
+// find returns the first entry of chain keyed key, and the language it is in.
+func find(chain []locale, key string) (locale, Entry, bool) {
+	for _, loc := range chain {
+		if e, ok := loc.entries[key]; ok {
+			return loc, e, true
+		}
+	}
+	return locale{}, Entry{}, false
 }
