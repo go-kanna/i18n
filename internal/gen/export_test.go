@@ -3,9 +3,7 @@ package gen
 import (
 	"errors"
 	"fmt"
-	"go/ast"
 	"go/token"
-	"go/types"
 	"maps"
 	"path/filepath"
 	"slices"
@@ -212,11 +210,4 @@ func analyzeDir(dir string) (model, map[string]token.Position, error) {
 		return model{}, nil, errors.New(strings.Join(msgs, "\n"))
 	}
 	return m, declared, nil
-}
-
-// ReadCatalogs reads the catalogs f passes i18n.NewBundle, as ReadBundle does
-// before it builds the Bundle.
-func ReadCatalogs(f *ast.File, info *types.Info) ([]i18n.Catalog, error) {
-	cs, _, err := reader{info: info}.catalogs(f)
-	return cs, err
 }

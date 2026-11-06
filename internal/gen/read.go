@@ -14,11 +14,12 @@ import (
 )
 
 // ReadBundle builds the Bundle f, a file kanna-i18n generated, builds from the
-// catalogs it passes i18n.NewBundle; info holds the types of f's package. It
-// reads the literals emit writes by the constants they hold, however they are
-// laid out. Any other form, and catalogs NewBundle rejects, is reported where it
-// is, rather than read as fewer catalogs than the program renders with.
-func ReadBundle(fset *token.FileSet, f *ast.File, info *types.Info) (i18n.Bundle, []diag.Diag) {
+// catalogs it passes i18n.NewBundle, and returns it with the catalogs; info
+// holds the types of f's package. It reads the literals emit writes by the
+// constants they hold, however they are laid out. Any other form, and catalogs
+// NewBundle rejects, is reported where it is, rather than read as fewer
+// catalogs than the program renders with.
+func ReadBundle(fset *token.FileSet, f *ast.File, info *types.Info) (i18n.Bundle, []i18n.Catalog, []diag.Diag) {
 	catalogs, call, err := reader{info: info}.catalogs(f)
 	var b i18n.Bundle
 	if err == nil {
@@ -26,10 +27,10 @@ func ReadBundle(fset *token.FileSet, f *ast.File, info *types.Info) (i18n.Bundle
 	}
 	var re readError
 	if !errors.As(err, &re) {
-		return b, nil
+		return b, catalogs, nil
 	}
 	d := diag.Errorf(fset.Position(re.pos), "cannot read the catalogs %s generated: %s", generator, re.msg)
-	return i18n.Bundle{}, []diag.Diag{d.WithHints("regenerate the file with " + generator)}
+	return i18n.Bundle{}, nil, []diag.Diag{d.WithHints("regenerate the file with " + generator)}
 }
 
 // readError is a form ReadBundle cannot read, at pos.

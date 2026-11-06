@@ -27,16 +27,12 @@ func TestReadBundle(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			fset, f, info := loadGenerated(t, dir, "")
-			got, err := gen.ReadCatalogs(f, info)
-			if err != nil {
-				t.Fatal(err)
+			_, got, ds := gen.ReadBundle(loadGenerated(t, dir, ""))
+			if len(ds) > 0 {
+				t.Fatalf("ReadBundle() = %v, want no diagnostics", ds)
 			}
 			if !reflect.DeepEqual(got, want) {
-				t.Errorf("ReadCatalogs() = %+v, want %+v", got, want)
-			}
-			if _, ds := gen.ReadBundle(fset, f, info); len(ds) > 0 {
-				t.Errorf("ReadBundle() = %v, want no diagnostics", ds)
+				t.Errorf("ReadBundle() = %+v, want %+v", got, want)
 			}
 		})
 	}
@@ -45,7 +41,7 @@ func TestReadBundle(t *testing.T) {
 func TestReadBundle_layout(t *testing.T) {
 	t.Parallel()
 
-	_, f, info := loadGenerated(t, "testdata/basic", `const en = "e" + "n"
+	b, got, ds := gen.ReadBundle(loadGenerated(t, "testdata/basic", `const en = "e" + "n"
 
 var bundle = i18n.NewBundle(
 	i18n.Catalog{Lang: en, Entries: map[string]i18n.Entry{
@@ -55,10 +51,9 @@ var bundle = i18n.NewBundle(
 	i18n.Catalog{Entries: map[string]i18n.Entry{}, Lang: "ja"},
 	i18n.Catalog{Lang: "fr"},
 )
-`)
-	got, err := gen.ReadCatalogs(f, info)
-	if err != nil {
-		t.Fatal(err)
+`))
+	if len(ds) > 0 {
+		t.Fatalf("ReadBundle() = %v, want no diagnostics", ds)
 	}
 	want := []i18n.Catalog{
 		{Lang: "en", Entries: map[string]i18n.Entry{
@@ -69,7 +64,11 @@ var bundle = i18n.NewBundle(
 		{Lang: "fr"},
 	}
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("ReadCatalogs() = %+v, want %+v", got, want)
+		t.Errorf("ReadBundle() = %+v, want %+v", got, want)
+	}
+	// The Bundle is built of them: fr falls back to en, the first.
+	if got := i18n.Lookup(b, "hello"); len(got) != 3 {
+		t.Errorf("Lookup(hello) = %+v, want en's in each of the 3 languages", got)
 	}
 }
 
@@ -172,8 +171,7 @@ var bundle = i18n.NewBundle(i18n.Catalog{Lang: "en", Entries: map[string]i18n.En
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			fset, f, info := loadGenerated(t, "testdata/basic", tt.src)
-			_, ds := gen.ReadBundle(fset, f, info)
+			_, _, ds := gen.ReadBundle(loadGenerated(t, "testdata/basic", tt.src))
 			if len(ds) != 1 {
 				t.Fatalf("ReadBundle() = %v, want one diagnostic", ds)
 			}
