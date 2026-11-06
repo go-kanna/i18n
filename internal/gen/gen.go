@@ -31,7 +31,9 @@ func Command() cli.Command[config] {
 		Summary: "compile a directory of locale files into typed message constructors",
 		Help: "Each locale file is YAML named by its language, such as en.yaml or pt-BR.yaml.\n" +
 			"The default language defines the constructors, and every other language is\n" +
-			"checked against it.",
+			"checked against it.\n\n" +
+			generator + " vet [flags] [packages] finds the error codes that render as their\n" +
+			"key, or with a placeholder the params do not give; " + generator + " vet -h tells more.",
 		Flags: func(fs *flag.FlagSet, cfg *config) {
 			fs.StringVar(&cfg.locales, "locales", "locales", "read the locale files from `dir`")
 			fs.TextVar(&cfg.def, "default", language.English,

@@ -1,6 +1,8 @@
 package i18n_test
 
 import (
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/go-kanna/i18n"
@@ -286,5 +288,125 @@ func TestNewBundle_CopiesCatalogs(t *testing.T) {
 		if got := l.Localize(tt.m); got != tt.want {
 			t.Errorf("Localize(%s) = %q, want %q", tt.m.Key, got, tt.want)
 		}
+	}
+}
+
+// written writes e back as a locale file writes it, the forms of a plural one
+// joined by " | ".
+func written(e i18n.Entry) string {
+	forms := []i18n.Template{e.Single}
+	if p := e.Plural; p != nil {
+		forms = []i18n.Template{p.Zero, p.One, p.Two, p.Few, p.Many, p.Other}
+	}
+	var out []string
+	for _, t := range forms {
+		if t == nil && e.Plural != nil {
+			continue
+		}
+		var b strings.Builder
+		for _, s := range t {
+			if s.Param != "" {
+				b.WriteString("{" + s.Param + "}")
+				continue
+			}
+			b.WriteString(s.Text)
+		}
+		out = append(out, b.String())
+	}
+	return strings.Join(out, " | ")
+}
+
+func TestLookup(t *testing.T) {
+	t.Parallel()
+
+	b := i18n.NewBundle(
+		i18n.Catalog{Lang: "en", Entries: map[string]i18n.Entry{
+			"greeting": single(text("Hello!")),
+			"hello":    single(text("Hello, "), param("name"), text("!")),
+		}},
+		i18n.Catalog{Lang: "en-GB", Entries: map[string]i18n.Entry{"greeting": single(text("Hello, mate!"))}},
+		i18n.Catalog{Lang: "fr"},
+		i18n.Catalog{Lang: "ja", Entries: map[string]i18n.Entry{"hello": single(text("こんにちは、"), param("name"))}},
+	)
+	fr := i18n.NewBundle(i18n.Catalog{Lang: "fr", Entries: map[string]i18n.Entry{"greeting": single(text("Bonjour !"))}})
+
+	tests := []struct {
+		name string
+		b    i18n.Bundle
+		key  string
+		want []string // an entry for each language, in the order of the catalogs
+	}{
+		{
+			name: "by each language's own way",
+			b:    b,
+			key:  "greeting",
+			want: []string{"Hello!", "Hello, mate!", "Hello!", "Hello!"},
+		},
+		{
+			name: "the built-in texts where each language reaches them",
+			b:    b,
+			key:  "errors.messages.blank",
+			want: []string{"can't be blank", "can't be blank", "can't be blank", "を入力してください"},
+		},
+		{
+			name: "plural",
+			b:    b,
+			key:  "errors.messages.too_long",
+			want: []string{
+				"is too long (maximum is 1 character) | is too long (maximum is {count} characters)",
+				"is too long (maximum is 1 character) | is too long (maximum is {count} characters)",
+				"is too long (maximum is 1 character) | is too long (maximum is {count} characters)",
+				"は{count}文字以内で入力してください",
+			},
+		},
+		{name: "no language", b: b, key: "nothing"},
+		// French has no built-in texts, and nothing falls back to English.
+		{name: "no built-in text reached", b: fr, key: "errors.messages.blank"},
+		{name: "zero Bundle", b: i18n.Bundle{}, key: "greeting"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var got []string
+			for _, e := range i18n.Lookup(tt.b, tt.key) {
+				got = append(got, written(e))
+			}
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("Lookup(%q) = %q, want %q", tt.key, got, tt.want)
+			}
+		})
+	}
+}
+
+// Changing what Lookup returns changes nothing a Bundle renders, the built-in
+// texts included.
+func TestLookup_Copies(t *testing.T) {
+	t.Parallel()
+
+	b := i18n.NewBundle(i18n.Catalog{Lang: "en", Entries: map[string]i18n.Entry{"greeting": single(text("Hello!"))}})
+	for _, key := range []string{"greeting", "errors.messages.too_long"} {
+		for _, e := range i18n.Lookup(b, key) {
+			if e.Plural != nil {
+				e.Plural.Other[0] = text("changed through the plural")
+				e.Plural.One = nil
+				continue
+			}
+			e.Single[0] = text("changed through the template")
+		}
+	}
+
+	l := b.Localizer("en")
+	if got := l.Localize(msg("greeting")); got != "Hello!" {
+		t.Errorf("Localize(greeting) = %q, want Hello!", got)
+	}
+	if got, want := l.Localize(i18n.Coded("errors.messages", "too_long", map[string]any{"count": 1})),
+		"is too long (maximum is 1 character)"; got != want {
+		t.Errorf("Localize(too_long) = %q, want %q", got, want)
+	}
+	if got, want := written(i18n.Lookup(b, "errors.messages.too_long")[0]),
+		"is too long (maximum is 1 character) | is too long (maximum is {count} characters)"; got != want {
+		t.Errorf("Lookup(too_long) = %q after a change, want %q", got, want)
 	}
 }

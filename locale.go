@@ -34,17 +34,22 @@ func newLocale(c Catalog) (locale, error) {
 func cloneEntries(entries map[string]Entry) map[string]Entry {
 	out := make(map[string]Entry, len(entries))
 	for key, e := range entries {
-		e.Single = slices.Clone(e.Single)
-		if e.Plural != nil {
-			p := *e.Plural
-			for _, t := range []*Template{&p.Zero, &p.One, &p.Two, &p.Few, &p.Many, &p.Other} {
-				*t = slices.Clone(*t)
-			}
-			e.Plural = &p
-		}
-		out[key] = e
+		out[key] = cloneEntry(e)
 	}
 	return out
+}
+
+// cloneEntry copies e down to its segments.
+func cloneEntry(e Entry) Entry {
+	e.Single = slices.Clone(e.Single)
+	if e.Plural != nil {
+		p := *e.Plural
+		for _, t := range []*Template{&p.Zero, &p.One, &p.Two, &p.Few, &p.Many, &p.Other} {
+			*t = slices.Clone(*t)
+		}
+		e.Plural = &p
+	}
+	return e
 }
 
 // render renders e with args. A placeholder whose argument is missing stays as
