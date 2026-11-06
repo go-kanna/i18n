@@ -321,7 +321,8 @@ looked up as the runtime does: in the language, its parents, the built-in texts 
 language. Which language a reader is shown is decided at run time, so vet reports only what breaks in every one of
 them:
 
-- a code no language has a text for, which renders as its key in each;
+- a code no language has a text for, which renders as its key in each. The hint suggests the closest code one has,
+  the built-in texts a language reaches included;
 - a placeholder used in every language that has the text, in every form the call may render, and not given by the
   params. A plural message may render any of its forms when the params give `count`, and `other` alone when they do
   not. The params are known when they are `nil` or a map literal of constant keys; `Fail` gives none.

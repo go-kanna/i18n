@@ -94,7 +94,8 @@ type messages struct {
 	packages string
 	// bundles are the Bundles of the packages.
 	bundles []i18n.Bundle
-	// keys are the keys of their catalogs, which a hint may suggest.
+	// keys are the keys some language of them renders, which a hint may
+	// suggest.
 	keys []string
 }
 
@@ -151,15 +152,13 @@ func readMessages(dir, tags string) (messages, []diag.Diag) {
 	keys := map[string]bool{}
 	for _, p := range set.Packages {
 		i := slices.IndexFunc(p.CompiledGoFiles, generated)
-		b, catalogs, ds := gen.ReadBundle(set.Fset, p.Syntax[i], p.TypesInfo)
+		b, _, ds := gen.ReadBundle(set.Fset, p.Syntax[i], p.TypesInfo)
 		if len(ds) > 0 {
 			return messages{}, ds
 		}
 		m.bundles = append(m.bundles, b)
-		for _, c := range catalogs {
-			for key := range c.Entries {
-				keys[key] = true
-			}
+		for _, key := range i18n.Keys(b) {
+			keys[key] = true
 		}
 	}
 	m.keys = slices.Sorted(maps.Keys(keys))

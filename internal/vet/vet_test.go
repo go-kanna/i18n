@@ -81,6 +81,7 @@ func Check(code, name string, n int, params map[string]any) []error {
 		validate.Fail(tooYoung),
 		validate.Fail("too_yuong"),
 		validate.Fail("blank"),
+		validate.Fail("blamk"),
 		validate.Fail("admin_only"),
 		validate.Fail(code),
 		validate.FailWith("corp_domain", nil),
@@ -110,14 +111,17 @@ var (
 				`user.go:14:17: error: "too_yuong" has no text in any language of admin/messages, messages, ` +
 					"so it renders as errors.messages.too_yuong\n" +
 					`  did you mean "too_young"?`,
-				`user.go:19:30: error: errors.messages.taken renders "{owner}" in every language of admin/messages, ` +
+				`user.go:16:17: error: "blamk" has no text in any language of admin/messages, messages, ` +
+					"so it renders as errors.messages.blamk\n" +
+					`  did you mean "blank"?`,
+				`user.go:20:30: error: errors.messages.taken renders "{owner}" in every language of admin/messages, ` +
 					"messages that has its text: the call gives no owner",
-				`user.go:23:26: error: errors.messages.seats renders "{count}" in every language of admin/messages, ` +
+				`user.go:24:26: error: errors.messages.seats renders "{count}" in every language of admin/messages, ` +
 					"messages that has its text: the call gives no count",
-				`user.go:32:28: error: "welcom" has no text in any language of admin/messages, messages, ` +
+				`user.go:33:28: error: "welcom" has no text in any language of admin/messages, messages, ` +
 					"so it renders as notices.welcom\n" +
 					`  did you mean "welcome"?`,
-				`user.go:33:39: error: notices.welcome renders "{name}" in every language of admin/messages, ` +
+				`user.go:34:39: error: notices.welcome renders "{name}" in every language of admin/messages, ` +
 					"messages that has its text: the call gives no name",
 			},
 		},
