@@ -295,6 +295,50 @@ A param that is neither a string, an int, nor a float64 renders through fmt, as 
 passed as `count` reads `2000-01-01 00:00:00 +0000 UTC`. To write one otherwise, replace it in the params before
 building the message; `Params` of either package returns a copy.
 
+## Checking the codes your code reports
+
+A code gets its text only when it renders, so a code no locale file has, or one misspelled, shows as its key,
+`errors.messages.too_young_for_admin`, and a param the call leaves out shows as its placeholder, `{domain}`.
+`kanna-i18n vet` finds such calls without running them:
+
+```sh
+go tool kanna-i18n vet ./...
+```
+
+```text
+usecase/user.go:42:37: error: "too_yuong" has no text in any language of internal/messages, so it renders as errors.messages.too_yuong
+  did you mean "too_young"?
+model/email.go:18:9: error: errors.messages.corp_domain renders "{domain}" in every language of internal/messages that has its text: the call gives no domain
+```
+
+It checks the calls of `validate.Fail` and `validate.FailWith` of kanna-validate and `rule.Fail` and `rule.FailWith` of
+kanna-value, whose codes render as `errors.messages.<code>`, and of `i18n.Coded`, whose code, and prefix, are constants.
+What it checks is how the error would render if it were rendered with the params the call gives: whether it is
+rendered at all, or logged or wrapped instead, it does not follow.
+
+The texts are those of every package of the module holding the `i18n_gen.go` kanna-i18n generated, in every language,
+looked up as the runtime does: in the language, its parents, the built-in texts that reach it, and the default
+language. Which language a reader is shown is decided at run time, so vet reports only what breaks in every one of
+them:
+
+- a code no language has a text for, which renders as its key in each;
+- a placeholder used in every language that has the text, in every form the call may render, and not given by the
+  params. A plural message may render any of its forms when the params give `count`, and `other` alone when they do
+  not. The params are known when they are `nil` or a map literal of constant keys; `Fail` gives none.
+
+It leaves alone:
+
+- a code or a placeholder missing in some languages only: a translation may leave a placeholder out, and kanna-i18n
+  warns of the keys a translation lacks;
+- a code or a prefix that is not a constant, and params known only at run time, whose code is still checked;
+- params the text does not use;
+- the codes `validate.TooLong` and the other functions of kanna-validate and kanna-value report themselves.
+
+The texts are read from the generated files, as the program is built with them: a locale file changed since the last
+run is checked as it was, which `-check` tells. A module without a messages package stops vet, as does a generated file
+it cannot read. Test files are not checked, as a test may report a code without a text on purpose. A package that
+passes holds nothing vet found; that is not to say there is nothing.
+
 ## Validation
 
 Errors stop generation:
@@ -321,7 +365,10 @@ A misspelled key, placeholder, plural category, or kind comes with the name it w
 
 ```sh
 kanna-i18n [flags]
+kanna-i18n vet [flags] [packages]
 ```
+
+Generating:
 
 | Flag                 | Meaning                                                                         |
 |----------------------|---------------------------------------------------------------------------------|
@@ -333,6 +380,15 @@ kanna-i18n [flags]
 | `-v`                 | list the file written or left unchanged                                         |
 | `-deps`              | print what a run reads and writes as JSON, for the `kanna` command, and exit    |
 | `-version`           | print the version                                                               |
+
+Vetting:
+
+| Flag           | Meaning                    |
+|----------------|----------------------------|
+| `-tags <list>` | comma-separated build tags |
+| `-version`     | print the version          |
+
+The packages vet checks default to the one in the current directory.
 
 Paths are relative to the directory `go generate` runs in, the one holding the `//go:generate` line. The package of the
 generated file is the one the Go files already in the destination declare, and the directory's name when there are
@@ -351,14 +407,14 @@ the first run has written it.
 
 [`example`](example) renders the same messages in English and Japanese — plurals, locale-formatted numbers, a fallback
 for a missing translation, and a language chosen from an Accept-Language value — with nothing to set up at run time. CI
-regenerates it and fails if the output would change.
+regenerates it, checks it with `kanna-i18n vet`, and fails if the output would change or vet reports a code.
 
 ## Development
 
 ```sh
 make test       # unit tests
 make lint       # golangci-lint
-make example    # regenerate the example, then build and run it
+make example    # regenerate the example, vet it, and run it
 ```
 
 ## License

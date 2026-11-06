@@ -31,4 +31,4 @@ clean:
 
 .PHONY: example
 example:
-	cd example && go generate ./... && go vet ./... && go run .
+	cd example && go generate ./... && go vet ./... && go tool kanna-i18n vet ./... && go run .
