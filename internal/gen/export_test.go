@@ -3,7 +3,9 @@ package gen
 import (
 	"errors"
 	"fmt"
+	"go/ast"
 	"go/token"
+	"go/types"
 	"maps"
 	"path/filepath"
 	"slices"
@@ -13,6 +15,8 @@ import (
 	"github.com/go-kanna/internal/diag"
 	"github.com/go-kanna/internal/output"
 	"golang.org/x/text/language"
+
+	"github.com/go-kanna/i18n"
 )
 
 // ParseTemplate parses src, spelling each segment as its text quoted or its
@@ -146,6 +150,56 @@ func Analyze(def string, locales map[string]string, declared ...string) (constru
 // with en the default language, keeping clear of what the files already in
 // dir/messages declare.
 func Emit(dir string) ([]byte, error) {
+	m, declared, err := analyzeDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	src, err := emit(m, "messages", slices.Sorted(maps.Keys(declared))).Bytes()
+	if err != nil {
+		return src, fmt.Errorf("generated code does not parse: %w", err)
+	}
+	return src, nil
+}
+
+// Catalogs returns the catalogs Emit(dir) passes i18n.NewBundle.
+func Catalogs(dir string) ([]i18n.Catalog, error) {
+	m, _, err := analyzeDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	catalogs := make([]i18n.Catalog, len(m.catalogs))
+	for i, c := range m.catalogs {
+		entries := make(map[string]i18n.Entry, len(c.entries))
+		for _, e := range c.entries {
+			if !e.plural() {
+				entries[e.key] = i18n.Entry{Single: runtimeTemplate(e.forms[0].template)}
+				continue
+			}
+			var p i18n.Plural
+			forms := map[string]*i18n.Template{
+				"zero": &p.Zero, "one": &p.One, "two": &p.Two, "few": &p.Few, "many": &p.Many, "other": &p.Other,
+			}
+			for _, f := range e.forms {
+				*forms[f.category] = runtimeTemplate(f.template)
+			}
+			entries[e.key] = i18n.Entry{Plural: &p}
+		}
+		catalogs[i] = i18n.Catalog{Lang: c.tag.String(), Entries: entries}
+	}
+	return catalogs, nil
+}
+
+func runtimeTemplate(t template) i18n.Template {
+	rt := make(i18n.Template, len(t.segments))
+	for i, s := range t.segments {
+		rt[i] = i18n.Segment{Text: s.text, Param: s.param}
+	}
+	return rt
+}
+
+// analyzeDir analyzes the locale files in dir/locales as Emit does, returning
+// what the files in dir/messages declare as well.
+func analyzeDir(dir string) (model, map[string]token.Position, error) {
 	cs, ds := readLocales(filepath.Join(dir, "locales"))
 	def, dds := defaultCatalog(filepath.Join(dir, "locales"), cs, language.English)
 	declared := output.DeclaredNames(filepath.Join(dir, "messages"), "i18n_gen.go", "messages")
@@ -155,11 +209,14 @@ func Emit(dir string) ([]byte, error) {
 		for i, d := range all {
 			msgs[i] = d.String()
 		}
-		return nil, errors.New(strings.Join(msgs, "\n"))
+		return model{}, nil, errors.New(strings.Join(msgs, "\n"))
 	}
-	src, err := emit(m, "messages", slices.Sorted(maps.Keys(declared))).Bytes()
-	if err != nil {
-		return src, fmt.Errorf("generated code does not parse: %w", err)
-	}
-	return src, nil
+	return m, declared, nil
+}
+
+// ReadCatalogs reads the catalogs f passes i18n.NewBundle, as ReadBundle does
+// before it builds the Bundle.
+func ReadCatalogs(f *ast.File, info *types.Info) ([]i18n.Catalog, error) {
+	cs, _, err := reader{info: info}.catalogs(f)
+	return cs, err
 }
