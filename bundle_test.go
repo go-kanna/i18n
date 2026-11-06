@@ -382,6 +382,42 @@ func TestLookup(t *testing.T) {
 
 // Changing what Lookup returns changes nothing a Bundle renders, the built-in
 // texts included.
+func TestKeys(t *testing.T) {
+	t.Parallel()
+
+	b := i18n.NewBundle(
+		i18n.Catalog{Lang: "en", Entries: map[string]i18n.Entry{"greeting": single(text("Hello!"))}},
+		i18n.Catalog{Lang: "ja", Entries: map[string]i18n.Entry{
+			"greeting":              single(text("こんにちは")),
+			"errors.messages.blank": single(text("は必須です")),
+		}},
+	)
+	fr := i18n.NewBundle(i18n.Catalog{Lang: "fr", Entries: map[string]i18n.Entry{"greeting": single(text("Bonjour !"))}})
+
+	keys := i18n.Keys(b)
+	if !slices.IsSorted(keys) || len(slices.Compact(slices.Clone(keys))) != len(keys) {
+		t.Errorf("Keys = %q, want them sorted, each once", keys)
+	}
+	for _, key := range []string{"greeting", "errors.format", "errors.messages.blank", "errors.messages.too_long"} {
+		if !slices.Contains(keys, key) {
+			t.Errorf("Keys = %q, want %s among them", keys, key)
+		}
+	}
+	for _, key := range keys {
+		if len(i18n.Lookup(b, key)) == 0 {
+			t.Errorf("Keys has %s, which Lookup finds no entry of", key)
+		}
+	}
+
+	// French has no built-in texts, so they render as their keys.
+	if got := i18n.Keys(fr); !slices.Equal(got, []string{"greeting"}) {
+		t.Errorf("Keys of a French bundle = %q, want only greeting", got)
+	}
+	if got := i18n.Keys(i18n.Bundle{}); len(got) != 0 {
+		t.Errorf("Keys of the zero Bundle = %q, want none", got)
+	}
+}
+
 func TestLookup_Copies(t *testing.T) {
 	t.Parallel()
 

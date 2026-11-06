@@ -2,6 +2,7 @@ package i18n
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 
 	"golang.org/x/text/language"
@@ -139,6 +140,22 @@ func Lookup(b Bundle, key string) []Entry {
 		}
 	}
 	return out
+}
+
+// Keys returns, sorted, the keys some language of b renders, the built-in texts
+// included where a language reaches them: those Lookup finds an entry of. It
+// is exported for kanna-i18n vet, which suggests one of them for a code no
+// language has.
+func Keys(b Bundle) []string {
+	keys := make(map[string]bool)
+	for _, c := range b.chains {
+		for _, loc := range c {
+			for key := range loc.entries {
+				keys[key] = true
+			}
+		}
+	}
+	return slices.Sorted(maps.Keys(keys))
 }
 
 // find returns the first entry of chain keyed key, and the language it is in.
