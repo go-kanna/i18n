@@ -52,8 +52,8 @@ type reporter struct {
 
 // reporters are the functions vet checks, by their full names.
 var reporters = map[string]reporter{
-	"github.com/go-kanna/validate.Fail":       {prefix: -1, code: 0, params: -1},
-	"github.com/go-kanna/validate.FailWith":   {prefix: -1, code: 0, params: 1},
+	"github.com/go-kanna/validator.Fail":      {prefix: -1, code: 0, params: -1},
+	"github.com/go-kanna/validator.FailWith":  {prefix: -1, code: 0, params: 1},
 	"github.com/go-kanna/value/rule.Fail":     {prefix: -1, code: 0, params: -1},
 	"github.com/go-kanna/value/rule.FailWith": {prefix: -1, code: 0, params: 1},
 	"github.com/go-kanna/i18n.Coded":          {prefix: 0, code: 1, params: 2},

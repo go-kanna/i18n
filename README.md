@@ -216,13 +216,13 @@ fails: the zero `Localizer` renders every message as its key, and a placeholder 
 
 ## Validation errors
 
-kanna-validate and kanna-value report a broken rule as a code with params, such as `too_long` with `count`, and leave
+kanna-validator and kanna-value report a broken rule as a code with params, such as `too_long` with `count`, and leave
 its text to the caller, as Rails' `errors.details` does. `i18n.FullMessages` renders them as sentences naming their
 fields, and `i18n.ErrorMessages` by field, as Rails' `errors.full_messages` and `errors.messages` do:
 
 ```go
 loc := messages.Localizer(lang)
-if errs, ok := errors.AsType[validate.Errors](err); ok {
+if errs, ok := errors.AsType[validator.Errors](err); ok {
 	for _, m := range i18n.FullMessages(loc, errs) {
 		fmt.Println(m)
 	}
@@ -236,7 +236,7 @@ if errs, ok := errors.AsType[validate.Errors](err); ok {
 // 確認用パスワードとパスワードの入力が一致しません
 ```
 
-The texts of every code kanna-validate and kanna-value report are built in, in English as Rails writes them and in
+The texts of every code kanna-validator and kanna-value report are built in, in English as Rails writes them and in
 Japanese as rails-i18n does. A locale file names the fields, overrides any built-in text, and adds the codes of rules of
 your own, which the default language writes first, as it does every key:
 
@@ -311,10 +311,10 @@ usecase/user.go:42:37: error: "too_yuong" has no text in any language of interna
 model/email.go:18:9: error: errors.messages.corp_domain renders "{domain}" in every language of internal/messages that has its text: the call gives no domain
 ```
 
-It checks the calls of `validate.Fail` and `validate.FailWith` of kanna-validate and `rule.Fail` and `rule.FailWith` of
-kanna-value, whose codes render as `errors.messages.<code>`, and of `i18n.Coded`, whose code, and prefix, are constants.
-What it checks is how the error would render if it were rendered with the params the call gives: whether it is
-rendered at all, or logged or wrapped instead, it does not follow.
+It checks the calls of `validator.Fail` and `validator.FailWith` of kanna-validator and `rule.Fail` and `rule.FailWith`
+of kanna-value, whose codes render as `errors.messages.<code>`, and of `i18n.Coded`, whose code, and prefix, are
+constants. What it checks is how the error would render if it were rendered with the params the call gives: whether it
+is rendered at all, or logged or wrapped instead, it does not follow.
 
 The texts are those of every package of the module holding the `i18n_gen.go` kanna-i18n generated, in every language,
 looked up as the runtime does: in the language, its parents, the built-in texts that reach it, and the default
@@ -333,7 +333,7 @@ It leaves alone:
   warns of the keys a translation lacks;
 - a code or a prefix that is not a constant, and params known only at run time, whose code is still checked;
 - params the text does not use;
-- the codes `validate.TooLong` and the other functions of kanna-validate and kanna-value report themselves.
+- the codes `validator.TooLong` and the other functions of kanna-validator and kanna-value report themselves.
 
 The texts are read from the generated files, as the program is built with them: a locale file changed since the last
 run is checked as it was, which `-check` tells. A module without a messages package stops vet, as does a generated file
