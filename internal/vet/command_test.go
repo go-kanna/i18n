@@ -19,17 +19,17 @@ func TestCommand(t *testing.T) {
 		"clean/clean.go":  "package clean\n",
 		"usecase/user.go": `package usecase
 
-import "github.com/go-kanna/validate"
+import "github.com/go-kanna/validator"
 
-var _ = validate.Fail("takn")
+var _ = validator.Fail("takn")
 `,
 		"tagged/tagged.go": `//go:build extra
 
 package tagged
 
-import "github.com/go-kanna/validate"
+import "github.com/go-kanna/validator"
 
-var _ = validate.Fail("tkaen")
+var _ = validator.Fail("tkaen")
 `,
 	}, nil)
 	const finding = `error: "takn" has no text in any language of messages, so it renders as errors.messages.takn
@@ -43,11 +43,11 @@ var _ = validate.Fail("tkaen")
 		stderr string
 	}{
 		{filepath.Join(dir, "clean"), nil, cli.ExitOK, "", ""},
-		{dir, []string{"./usecase"}, cli.ExitFailure, "", "usecase/user.go:5:23: " + finding},
-		{filepath.Join(dir, "usecase"), nil, cli.ExitFailure, "", "./user.go:5:23: " + finding},
+		{dir, []string{"./usecase"}, cli.ExitFailure, "", "usecase/user.go:5:24: " + finding},
+		{filepath.Join(dir, "usecase"), nil, cli.ExitFailure, "", "./user.go:5:24: " + finding},
 		{dir, []string{"./clean", "./tagged"}, cli.ExitFailure, "", ""},
 		{dir, []string{"-tags", "extra", "./tagged"}, cli.ExitFailure, "",
-			`tagged/tagged.go:7:23: error: "tkaen" has no text in any language of messages, ` +
+			`tagged/tagged.go:7:24: error: "tkaen" has no text in any language of messages, ` +
 				"so it renders as errors.messages.tkaen\n" +
 				"  did you mean \"taken\"?\n"},
 		{dir, []string{"./does-not-exist"}, cli.ExitFailure, "", ""},

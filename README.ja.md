@@ -171,11 +171,11 @@ locales/ja.yaml: warning: missing keys: user.not_found
 
 ## バリデーションエラー
 
-kanna-validate と kanna-value は、破られたルールを `count` 付きの `too_long` のようにコードとパラメータで報告し、文言は呼び出し側に任せます。Rails の `errors.details` と同じです。`i18n.FullMessages` はこれらをフィールド名を含む文としてレンダリングし、`i18n.ErrorMessages` はフィールドごとにレンダリングします。Rails の `errors.full_messages` と `errors.messages` と同じです:
+kanna-validator と kanna-value は、破られたルールを `count` 付きの `too_long` のようにコードとパラメータで報告し、文言は呼び出し側に任せます。Rails の `errors.details` と同じです。`i18n.FullMessages` はこれらをフィールド名を含む文としてレンダリングし、`i18n.ErrorMessages` はフィールドごとにレンダリングします。Rails の `errors.full_messages` と `errors.messages` と同じです:
 
 ```go
 loc := messages.Localizer(lang)
-if errs, ok := errors.AsType[validate.Errors](err); ok {
+if errs, ok := errors.AsType[validator.Errors](err); ok {
 	for _, m := range i18n.FullMessages(loc, errs) {
 		fmt.Println(m)
 	}
@@ -189,7 +189,7 @@ if errs, ok := errors.AsType[validate.Errors](err); ok {
 // 確認用パスワードとパスワードの入力が一致しません
 ```
 
-kanna-validate と kanna-value が報告するすべてのコードの文言が組み込まれています。英語は Rails の文言、日本語は rails-i18n の文言です。ロケールファイルでは、フィールドに名前を付け、どの組み込みの文言も上書きし、独自のルールのコードを追加できます。独自のコードは、ほかのキーと同じく、まずデフォルト言語に書きます:
+kanna-validator と kanna-value が報告するすべてのコードの文言が組み込まれています。英語は Rails の文言、日本語は rails-i18n の文言です。ロケールファイルでは、フィールドに名前を付け、どの組み込みの文言も上書きし、独自のルールのコードを追加できます。独自のコードは、ほかのキーと同じく、まずデフォルト言語に書きます:
 
 ```yaml
 # locales/en.yaml
@@ -240,7 +240,7 @@ usecase/user.go:42:37: error: "too_yuong" has no text in any language of interna
 model/email.go:18:9: error: errors.messages.corp_domain renders "{domain}" in every language of internal/messages that has its text: the call gives no domain
 ```
 
-検査するのは、kanna-validate の `validate.Fail` と `validate.FailWith`、kanna-value の `rule.Fail` と `rule.FailWith`（コードは `errors.messages.<code>` としてレンダリングされます）、`i18n.Coded` の呼び出しのうち、コード（と prefix）が定数のものです。確かめるのは、そのエラーを、呼び出しが渡したパラメータのままレンダリングしたらどうなるかです。エラーが実際にレンダリングされるのか、ログに出したり包み直したりするだけなのかは追いません。
+検査するのは、kanna-validator の `validator.Fail` と `validator.FailWith`、kanna-value の `rule.Fail` と `rule.FailWith`（コードは `errors.messages.<code>` としてレンダリングされます）、`i18n.Coded` の呼び出しのうち、コード（と prefix）が定数のものです。確かめるのは、そのエラーを、呼び出しが渡したパラメータのままレンダリングしたらどうなるかです。エラーが実際にレンダリングされるのか、ログに出したり包み直したりするだけなのかは追いません。
 
 文言は、kanna-i18n が生成した `i18n_gen.go` を持つ、モジュールのすべてのパッケージの、すべての言語のものです。ランタイムと同じく、その言語、親言語、そこに届く組み込みの文言、デフォルト言語の順にキーを探します。読み手にどの言語が表示されるかは実行時に決まるので、vet は、どの言語でも壊れるものだけを報告します:
 
@@ -252,7 +252,7 @@ model/email.go:18:9: error: errors.messages.corp_domain renders "{domain}" in ev
 - 一部の言語でだけ欠けているコードやプレースホルダ。翻訳はプレースホルダを省いてよく、翻訳に欠けているキーは kanna-i18n が警告します
 - 定数でないコードや prefix。実行時にしか分からないパラメータ（コードは検査します）
 - 文言が使わないパラメータ
-- `validate.TooLong` など、kanna-validate と kanna-value の関数が自分で報告するコード
+- `validator.TooLong` など、kanna-validator と kanna-value の関数が自分で報告するコード
 
 文言は、プログラムがビルドされるときと同じく、生成ファイルから読みます。最後の実行の後に変えたロケールファイルは変える前のまま検査され、そのことは `-check` が知らせます。モジュールに messages パッケージがないときと、読めない生成ファイルがあるときは、vet は止まります。テストのファイルは検査しません。テストでは、文言のないコードをわざと報告することがあるからです。検査を通ったパッケージは、vet が見つけた誤りがないというだけで、誤りがないことの証明ではありません。
 

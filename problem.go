@@ -10,8 +10,8 @@ import (
 
 // Problem is a broken rule as a validation reports it: the path of the field
 // it broke on, such as "address.zip" or "tags[1]", or "base" for the value as
-// a whole, and the code and params naming the rule. validate.FieldError of
-// go-kanna/validate is one, and so is anything with these methods: this
+// a whole, and the code and params naming the rule. validator.FieldError of
+// go-kanna/validator is one, and so is anything with these methods: this
 // package imports no validation package.
 type Problem interface {
 	Path() string
@@ -20,7 +20,7 @@ type Problem interface {
 }
 
 // basePath is where a problem with the value as a whole is reported, as
-// kanna-validate and Rails report it.
+// kanna-validator and Rails report it.
 const basePath = "base"
 
 // ErrorMessages renders problems as Rails renders errors.messages: by path,

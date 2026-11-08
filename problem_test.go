@@ -10,7 +10,7 @@ import (
 	"github.com/go-kanna/i18n"
 )
 
-// problem is a broken rule as validate.FieldError reports one.
+// problem is a broken rule as validator.FieldError reports one.
 type problem struct {
 	path, code string
 	params     map[string]any

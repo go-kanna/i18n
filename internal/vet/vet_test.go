@@ -70,7 +70,7 @@ notices:
 
 import (
 	"github.com/go-kanna/i18n"
-	"github.com/go-kanna/validate"
+	"github.com/go-kanna/validator"
 	"github.com/go-kanna/value/rule"
 )
 
@@ -78,16 +78,16 @@ const tooYoung = "too_young"
 
 func Check(code, name string, n int, params map[string]any) []error {
 	return []error{
-		validate.Fail(tooYoung),
-		validate.Fail("too_yuong"),
-		validate.Fail("blank"),
-		validate.Fail("blamk"),
-		validate.Fail("admin_only"),
-		validate.Fail(code),
-		validate.FailWith("corp_domain", nil),
-		validate.FailWith("taken", nil),
-		validate.FailWith("taken", map[string]any{"owner": name}),
-		validate.FailWith("taken", params),
+		validator.Fail(tooYoung),
+		validator.Fail("too_yuong"),
+		validator.Fail("blank"),
+		validator.Fail("blamk"),
+		validator.Fail("admin_only"),
+		validator.Fail(code),
+		validator.FailWith("corp_domain", nil),
+		validator.FailWith("taken", nil),
+		validator.FailWith("taken", map[string]any{"owner": name}),
+		validator.FailWith("taken", params),
 		rule.FailWith("items_left", map[string]any{"count": n}),
 		rule.FailWith("seats", nil),
 		rule.Fail("slots"),
@@ -103,18 +103,18 @@ var (
 	_ = i18n.Coded("", "notices.welcome", map[string]any{"name": "Alice"})
 )
 `,
-				"usecase/user_test.go": "package usecase\n\nimport \"github.com/go-kanna/validate\"\n\n" +
-					"var _ = validate.Fail(\"nope\")\n",
+				"usecase/user_test.go": "package usecase\n\nimport \"github.com/go-kanna/validator\"\n\n" +
+					"var _ = validator.Fail(\"nope\")\n",
 			},
 			gens: [][]string{nil, {"-locales", "admin/locales", "-destination", "admin/messages"}},
 			want: []string{
-				`user.go:14:17: error: "too_yuong" has no text in any language of admin/messages, messages, ` +
+				`user.go:14:18: error: "too_yuong" has no text in any language of admin/messages, messages, ` +
 					"so it renders as errors.messages.too_yuong\n" +
 					`  did you mean "too_young"?`,
-				`user.go:16:17: error: "blamk" has no text in any language of admin/messages, messages, ` +
+				`user.go:16:18: error: "blamk" has no text in any language of admin/messages, messages, ` +
 					"so it renders as errors.messages.blamk\n" +
 					`  did you mean "blank"?`,
-				`user.go:20:30: error: errors.messages.taken renders "{owner}" in every language of admin/messages, ` +
+				`user.go:20:31: error: errors.messages.taken renders "{owner}" in every language of admin/messages, ` +
 					"messages that has its text: the call gives no owner",
 				`user.go:24:26: error: errors.messages.seats renders "{count}" in every language of admin/messages, ` +
 					"messages that has its text: the call gives no count",
@@ -133,10 +133,10 @@ var (
 			},
 			gens: [][]string{{"-default", "fr"}},
 			want: []string{
-				`check.go:6:16: error: "blank" has no text in any language of messages, so it renders as errors.messages.blank`,
-				`check.go:7:20: error: "too_long" has no text in any language of messages, ` +
+				`check.go:6:17: error: "blank" has no text in any language of messages, so it renders as errors.messages.blank`,
+				`check.go:7:21: error: "too_long" has no text in any language of messages, ` +
 					"so it renders as errors.messages.too_long",
-				`check.go:8:20: error: "too_long" has no text in any language of messages, ` +
+				`check.go:8:21: error: "too_long" has no text in any language of messages, ` +
 					"so it renders as errors.messages.too_long",
 			},
 		},
@@ -149,7 +149,7 @@ var (
 			},
 			gens: [][]string{{"-default", "fr"}},
 			want: []string{
-				`check.go:7:32: error: errors.messages.too_long renders "{count}" in every language of messages ` +
+				`check.go:7:33: error: errors.messages.too_long renders "{count}" in every language of messages ` +
 					"that has its text: the call gives no count",
 			},
 		},
@@ -171,19 +171,19 @@ var (
 // checkBuiltin reports codes of built-in texts.
 const checkBuiltin = `package check
 
-import "github.com/go-kanna/validate"
+import "github.com/go-kanna/validator"
 
 var _ = []error{
-	validate.Fail("blank"),
-	validate.FailWith("too_long", nil),
-	validate.FailWith("too_long", map[string]any{"count": 10}),
+	validator.Fail("blank"),
+	validator.FailWith("too_long", nil),
+	validator.FailWith("too_long", map[string]any{"count": 10}),
 }
 `
 
 func TestRun_messages(t *testing.T) {
 	t.Parallel()
 
-	const use = "package use\n\nimport \"github.com/go-kanna/validate\"\n\nvar _ = validate.Fail(\"blank\")\n"
+	const use = "package use\n\nimport \"github.com/go-kanna/validator\"\n\nvar _ = validator.Fail(\"blank\")\n"
 	tests := []struct {
 		name  string
 		files map[string]string
@@ -235,11 +235,11 @@ var bundle = i18n.NewBundle(i18n.Catalog{Lang: lang})
 	}
 }
 
-// fakes stand in for kanna-validate and kanna-value, declaring what vet checks
+// fakes stand in for kanna-validator and kanna-value, declaring what vet checks
 // with the signatures of the real ones.
 var fakes = map[string]string{
-	"fake/validate/go.mod": "module github.com/go-kanna/validate\n\ngo 1.26.0\n",
-	"fake/validate/validate.go": `package validate
+	"fake/validator/go.mod": "module github.com/go-kanna/validator\n\ngo 1.26.0\n",
+	"fake/validator/validator.go": `package validator
 
 type Error struct{}
 
@@ -298,7 +298,7 @@ go 1.26.0
 
 require (
 	github.com/go-kanna/i18n v0.0.0
-	github.com/go-kanna/validate v0.0.0
+	github.com/go-kanna/validator v0.0.0
 	github.com/go-kanna/value v0.0.0
 )
 
@@ -306,7 +306,7 @@ require golang.org/x/text v0.43.0 // indirect
 
 replace (
 	github.com/go-kanna/i18n => ` + root + `
-	github.com/go-kanna/validate => ./fake/validate
+	github.com/go-kanna/validator => ./fake/validator
 	github.com/go-kanna/value => ./fake/value
 )
 `,

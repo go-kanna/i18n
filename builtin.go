@@ -9,7 +9,7 @@ import (
 
 // builtin holds the texts every Bundle knows without a locale file: how a
 // validation error reads, errors.format and errors.messages.<code>, for the
-// codes kanna-validate and kanna-value report. English follows Rails, Japanese
+// codes kanna-validator and kanna-value report. English follows Rails, Japanese
 // rails-i18n. A catalog of the same language overrides any of them.
 var builtin = []Catalog{
 	{Lang: "en", Entries: map[string]Entry{
