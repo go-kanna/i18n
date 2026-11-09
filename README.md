@@ -192,8 +192,8 @@ different kind stops generation.
 
 Parameters come in the order of the names of their placeholders, a plural message's `count` first, so that rewording a
 text cannot swap two arguments of one type: `"{last}, {first}"` makes `FullName(first string, last string)`, as
-`"{first} {last}"` does. They are named in camelCase: `{user_name}` becomes `userName`. A name Go
-reserves or predeclares gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes `errorArg`.
+`"{first} {last}"` does. They are named in camelCase: `{user_name}` becomes `userName`. A name Go reserves or
+predeclares gets `Arg` appended: `{type}` becomes `typeArg`, and `{error}` becomes `errorArg`.
 
 ## Languages
 
@@ -311,10 +311,10 @@ usecase/user.go:42:37: error: "too_yuong" has no text in any language of interna
 model/email.go:18:9: error: errors.messages.corp_domain renders "{domain}" in every language of internal/messages that has its text: the call gives no domain
 ```
 
-It checks the calls of `validator.Fail` and `validator.FailWith` of kanna-validator and `rule.Fail` and `rule.FailWith`
-of kanna-value, whose codes render as `errors.messages.<code>`, and of `i18n.Coded`, whose code, and prefix, are
-constants. What it checks is how the error would render if it were rendered with the params the call gives: whether it
-is rendered at all, or logged or wrapped instead, it does not follow.
+It checks the calls of `validator.Fail` and `validator.FailWith` of kanna-validator, of `rule.Fail` and `rule.FailWith`
+of kanna-value, and of `i18n.Coded`, where the code, and the prefix, are constants. The codes of `Fail` and `FailWith`
+render as `errors.messages.<code>`. What it checks is how the error would render if it were rendered with the params the
+call gives: whether it is rendered at all, or logged or wrapped instead, it does not follow.
 
 The texts are those of every package of the module holding the `i18n_gen.go` kanna-i18n generated, in every language,
 looked up as the runtime does: in the language, its parents, the built-in texts that reach it, and the default
@@ -392,9 +392,9 @@ Vetting:
 The packages vet checks default to the one in the current directory.
 
 Paths are relative to the directory `go generate` runs in, the one holding the `//go:generate` line. The package of the
-generated file is the one the Go files already in the destination declare, and the directory's name when there are
-none yet: write a `doc.go` there, `package msgs`, for another name. A run that succeeds prints nothing but its warnings, which
-[Validation](#validation) lists, such as the keys a translation lacks. A file named `i18n_gen.go` without the
+generated file is the one the Go files already in the destination declare, and the directory's name when there are none
+yet: write a `doc.go` there, `package msgs`, for another name. A run that succeeds prints nothing but its warnings,
+which [Validation](#validation) lists, such as the keys a translation lacks. A file named `i18n_gen.go` without the
 generated-code header is never touched.
 
 Code calling the messages is checked with what a run is about to write in place: the destination's own, and that of the
