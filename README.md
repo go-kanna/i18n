@@ -117,7 +117,7 @@ Each constructor's documentation carries what the default language says, so an e
 where it is called.
 
 A constructor returns an `i18n.Message`, not a string: code that does not know the reader's language can hand one back
-— inside an error, say — and the code that does know renders it:
+(inside an error, say), and the code that does know renders it:
 
 ```go
 loc := messages.Localizer(r.Header.Get("Accept-Language"))
@@ -141,7 +141,7 @@ locales/ja.yaml: warning: missing keys: user.not_found
 
 ## Locale files
 
-The locale directory is flat — one file per language, no recursion — and the file name without its extension is the
+The locale directory is flat (one file per language, no recursion), and the file name without its extension is the
 language: `en.yaml`, `pt-BR.yaml`, `ja.yml`. Nothing named like a language is skipped in silence: a subdirectory such as
 `locales/en/` or `locales/en.yaml/`, or a file in another format such as `en.json` or `en.toml`, stops generation. Other
 files are skipped with a warning, so a stray `config.yaml` does not fail the run, and names starting with a dot are
@@ -185,10 +185,10 @@ other counts of that category too: 10 through 20, for one.
 `{name}` writes no kind, and is a `string` where nothing else gives it one; `{name:string}` says it is one, which another
 form or the default language giving it another kind contradicts. `count` in a plural message is always an `int`. A
 `number` is written as CLDR's default pattern for the language has it, which keeps three fraction digits at most:
-1234.5678 renders as `1,234.568`. Within a message, a placeholder written without a kind takes the one written for it elsewhere — in another
-plural form, say — and two different kinds are an error. The default language decides each parameter's type: a
-translation may leave the kind off, as `ja.yaml` above does for the price, and one that writes a different kind stops
-generation.
+1234.5678 renders as `1,234.568`. Within a message, a placeholder written without a kind takes the one written for it
+elsewhere (in another plural form, say), and two different kinds are an error. The default language decides each
+parameter's type: a translation may leave the kind off, as `ja.yaml` above does for the price, and one that writes a
+different kind stops generation.
 
 Parameters come in the order of the names of their placeholders, a plural message's `count` first, so that rewording a
 text cannot swap two arguments of one type: `"{last}, {first}"` makes `FullName(first string, last string)`, as
@@ -197,7 +197,7 @@ reserves or predeclares gets `Arg` appended: `{type}` becomes `typeArg`, and `{e
 
 ## Languages
 
-The default language — `-default`, `en` unless said otherwise — defines the constructors: their names, parameters, and
+The default language (`-default`, `en` unless said otherwise) defines the constructors: their names, parameters, and
 types come from its file, and every other file is checked against it. It is served by its own file alone:
 `-default en` takes `en.yaml`, and `-default en-US` takes `en-US.yaml`. Another file of the language does not stand in
 for it, so a locale directory holding `en-US.yaml` but no `en.yaml` needs `-default en-US`.
@@ -209,7 +209,7 @@ Norwegian. So `messages.Localizer(cookie.Value, r.Header.Get("Accept-Language"))
 then the ones the browser asks for. A value that does not parse is skipped as a whole, one bad entry and all, and when
 nothing matches, the default language is used.
 
-A message the chosen language lacks falls back through its parent languages — `en-GB` to `en` — and then to the default
+A message the chosen language lacks falls back through its parent languages (`en-GB` to `en`) and then to the default
 language, and is rendered under the plural rules and number format of the language it is found in. `Localize` never
 fails: the zero `Localizer` renders every message as its key, and a placeholder whose argument is missing renders as
 `{name}`.
@@ -406,8 +406,8 @@ the first run has written it.
 
 ## Example
 
-[`example`](example) renders the same messages in English and Japanese — plurals, locale-formatted numbers, a fallback
-for a missing translation, and a language chosen from an Accept-Language value — with nothing to set up at run time. CI
+[`example`](example) renders the same messages in English and Japanese (plurals, locale-formatted numbers, a fallback
+for a missing translation, and a language chosen from an Accept-Language value) with nothing to set up at run time. CI
 regenerates it, checks it with `kanna-i18n vet`, and fails if the output would change or vet reports a code.
 
 ## Development
