@@ -71,14 +71,14 @@ func parseLocale(path string, data []byte) ([]entry, []diag.Diag) {
 		if errors.Is(err, io.EOF) {
 			return nil, nil
 		}
-		return nil, []diag.Diag{p.syntaxError(err)}
+		return nil, []diag.Diag{p.syntaxError(err, data)}
 	}
 	var next yaml.Node
 	switch err := dec.Decode(&next); {
 	case err == nil:
 		return nil, []diag.Diag{diag.Errorf(p.pos(&next), "a locale file holds one YAML document, and this is a second")}
 	case !errors.Is(err, io.EOF):
-		return nil, []diag.Diag{p.syntaxError(err)}
+		return nil, []diag.Diag{p.syntaxError(err, data)}
 	}
 
 	switch root := doc.Content[0]; {
@@ -122,7 +122,13 @@ func (p *localeParser) mapping(n *yaml.Node, prefix string) {
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], resolve(n.Content[i+1])
 		if k.Kind != yaml.ScalarNode || !validKey(k.Value, paths) {
-			p.report(diag.Errorf(p.pos(k), "invalid key %q: each part of a key matches [a-z][a-z0-9_]*", k.Value))
+			d := diag.Errorf(p.pos(k), "invalid key %q: each part of a key matches [a-z][a-z0-9_]*", k.Value)
+			if k.Kind == yaml.ScalarNode && strings.Contains(k.Value, ".") && validKey(k.Value, true) {
+				parts := strings.Split(k.Value, ".")
+				d = d.WithHints(fmt.Sprintf("nest each part under the one before it, %s: under %s:", parts[1], parts[0]),
+					"only the keys under "+strings.TrimSuffix(attributesPrefix, ".")+" are written with dots")
+			}
+			p.report(d)
 			continue
 		}
 		if paths && v.Kind == yaml.MappingNode && len(v.Content) > 0 {
@@ -276,12 +282,42 @@ func (p *localeParser) form(v *yaml.Node, key, category string) (form, bool) {
 // package writes into the message alone.
 var yamlLine = regexp.MustCompile(`(?s)^yaml: line (\d+): (.*)$`)
 
-func (p *localeParser) syntaxError(err error) diag.Diag {
+// parserProblems are the problems the YAML parser, as opposed to its scanner,
+// reports. The YAML package counts the line of a parser problem from 0, and
+// leaves out a line 0 of either.
+var parserProblems = []string{
+	"did not find expected '-' indicator",
+	"did not find expected ',' or ']'",
+	"did not find expected ',' or '}'",
+	"did not find expected <document start>",
+	"did not find expected <stream-start>",
+	"did not find expected key",
+	"did not find expected node content",
+	"found duplicate %TAG directive",
+	"found duplicate %YAML directive",
+	"found incompatible YAML document",
+	"found undefined tag handle",
+}
+
+// syntaxError reports err, which the YAML package returned reading data.
+func (p *localeParser) syntaxError(err error, data []byte) diag.Diag {
 	pos := token.Position{Filename: p.path}
 	msg := strings.TrimPrefix(err.Error(), "yaml: ")
 	if m := yamlLine.FindStringSubmatch(err.Error()); m != nil {
 		pos.Line, _ = strconv.Atoi(m[1])
 		msg = m[2]
+	}
+	switch {
+	case strings.HasPrefix(msg, "unknown anchor "):
+		// Not the parser's, so it has no line.
+	case slices.Contains(parserProblems, msg):
+		pos.Line++
+	case pos.Line == 0:
+		pos.Line = 1
+	}
+	// A problem at the end of the file is on the line after its last newline.
+	if last := bytes.Count(bytes.TrimRight(data, "\n"), []byte("\n")) + 1; pos.Line > last {
+		pos.Line = last
 	}
 	return diag.Errorf(pos, "%s", msg)
 }
