@@ -289,10 +289,11 @@ errors:
   text is overridden in the forms of its own language, plural or not, whatever the default language writes, and fills
   its own placeholders, such as `{count}`; the name of a field fills none.
 
-Anything with `Path`, `Code`, and `Params` methods renders. Only a `validator.FieldError` tells a field from a map key
-or an index, by its `Segments`: the path of anything else, or of a `FieldError` built by hand without `Segments`, is
-taken as the name of one field, so `address.zip` is named by `errors.attributes.address.zip` alone, and written out as
-`Address.zip`. For one message without its field, `i18n.Coded("errors.messages", code, params)` builds it. A
+Anything with `Path`, `Code`, and `Params` methods renders: this package imports no validation package. A problem may
+also have a `FieldNames() []string` method, as `validator.FieldError` does, returning the fields on its path without the
+map keys and indexes; the path of one without it, or whose `FieldNames` returns none, such as a `FieldError` built by
+hand, is taken as the name of one field, so `address.zip` is named by `errors.attributes.address.zip` alone, and written
+out as `Address.zip`. For one message without its field, `i18n.Coded("errors.messages", code, params)` builds it. A
 `*rule.Error` of go-kanna/value, from building or decoding a value type, has `Code` and `Params` as well.
 
 `errors.format`, `errors.attributes`, and `errors.messages` are what these functions read, so no constructor is

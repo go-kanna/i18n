@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/go-kanna/internal/cli"
-	"golang.org/x/mod/modfile"
 )
 
 // TestMain loads every module the tests write outside any workspace. A GOWORK
@@ -34,28 +33,12 @@ func app(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mod, err := os.ReadFile(filepath.Join(root, "go.mod")) //nolint:gosec // this checkout's own go.mod
-	if err != nil {
-		t.Fatal(err)
-	}
-	f, err := modfile.ParseLax("go.mod", mod, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// The messages import kanna-i18n, which imports kanna-validator.
-	var validator string
-	for _, r := range f.Require {
-		if r.Mod.Path == "github.com/go-kanna/validator" {
-			validator = r.Mod.Version
-		}
-	}
 
 	dir := t.TempDir()
 	writeFiles(t, dir, locales)
 	writeFiles(t, dir, map[string]string{
-		"go.mod": "module example.com/app\n\ngo 1.27.0\n\nrequire github.com/go-kanna/i18n v0.0.0\n\n" +
-			"require (\n\tgithub.com/go-kanna/validator " + validator + " // indirect\n" +
-			"\tgolang.org/x/text v0.43.0 // indirect\n)\n\nreplace github.com/go-kanna/i18n => " + root + "\n",
+		"go.mod": "module example.com/app\n\ngo 1.26.0\n\nrequire github.com/go-kanna/i18n v0.0.0\n\n" +
+			"require golang.org/x/text v0.43.0 // indirect\n\nreplace github.com/go-kanna/i18n => " + root + "\n",
 		"go.sum": string(sum),
 		"main.go": "package main\n\nimport (\n\t\"fmt\"\n\n\t\"example.com/app/messages\"\n)\n\n" +
 			"func main() { fmt.Println(messages.Localizer(\"ja\").Localize(messages.Hello(\"Alice\"))) }\n",

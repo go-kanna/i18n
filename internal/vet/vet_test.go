@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-kanna/internal/cli"
 	"github.com/go-kanna/internal/diag"
-	"golang.org/x/mod/modfile"
 
 	"github.com/go-kanna/i18n/internal/gen"
 	"github.com/go-kanna/i18n/internal/vet"
@@ -239,26 +238,10 @@ var bundle = i18n.NewBundle(i18n.Catalog{Lang: lang})
 }
 
 // fakes stand in for kanna-validator and kanna-value, declaring what vet checks
-// and kanna-i18n uses with the signatures of the real ones.
+// with the signatures of the real ones.
 var fakes = map[string]string{
 	"fake/validator/go.mod": "module github.com/go-kanna/validator\n\ngo 1.26.0\n",
 	"fake/validator/validator.go": `package validator
-
-type FieldError struct {
-	Field    string
-	Segments []Segment
-	Err      error
-}
-
-type Segment struct {
-	Kind  SegmentKind
-	Name  string
-	Index int
-}
-
-type SegmentKind int
-
-const FieldSegment SegmentKind = 1
 
 type Error struct{}
 
@@ -295,7 +278,6 @@ func module(t *testing.T, files map[string]string, gens ...[]string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	validator := requiredVersion(t, root, "github.com/go-kanna/validator")
 
 	dir := t.TempDir()
 	write := func(files map[string]string) {
@@ -314,11 +296,11 @@ func module(t *testing.T, files map[string]string, gens ...[]string) string {
 	write(map[string]string{
 		"go.mod": `module example.com/app
 
-go 1.27.0
+go 1.26.0
 
 require (
 	github.com/go-kanna/i18n v0.0.0
-	github.com/go-kanna/validator ` + validator + `
+	github.com/go-kanna/validator v0.0.0
 	github.com/go-kanna/value v0.0.0
 )
 
@@ -340,29 +322,6 @@ replace (
 		}
 	}
 	return dir
-}
-
-// requiredVersion returns the version of path the go.mod in dir requires, which
-// a module requiring that one must require at least.
-func requiredVersion(t *testing.T, dir, path string) string {
-	t.Helper()
-
-	name := filepath.Join(dir, "go.mod")
-	data, err := os.ReadFile(name) //nolint:gosec // this checkout's own go.mod
-	if err != nil {
-		t.Fatal(err)
-	}
-	f, err := modfile.ParseLax(name, data, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, r := range f.Require {
-		if r.Mod.Path == path {
-			return r.Mod.Version
-		}
-	}
-	t.Fatalf("%s requires no %s", name, path)
-	return ""
 }
 
 // report renders ds as diag does, naming each file by its base name.

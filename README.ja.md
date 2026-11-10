@@ -220,7 +220,7 @@ errors:
 - `base` に報告される、値全体についての問題は、メッセージだけになります。
 - メッセージはまず読み手の言語とその親言語で、アプリケーションの文言、組み込みの文言の順に探し、その後でデフォルト言語を探します。日本語の読み手には、アプリケーションの英語ではなく、組み込みの日本語が表示されます。デフォルト言語が上書きしていない組み込みの文言を翻訳が上書きしても、デフォルト言語が書き下しに任せているフィールドに翻訳が名前を付けても構いません。日本語は `title` に名前を付けますが、英語はそのままでも `Title` になります。組み込みの文言は、デフォルト言語の書き方によらず、その言語の形で（複数形でもそうでなくても）上書きでき、`{count}` のような組み込みの文言自身のプレースホルダを埋めます。フィールドの名前は、プレースホルダを何も埋めません。
 
-`Path`、`Code`、`Params` メソッドを持つものなら何でもレンダリングできます。フィールドと map のキーや添字を見分けられるのは、`Segments` を持つ `validator.FieldError` だけです。ほかのもののパスと、`Segments` なしで手で作った `FieldError` のパスは、1 つのフィールドの名前として扱うので、`address.zip` は `errors.attributes.address.zip` だけで探し、書き下すと `Address.zip` になります。フィールド名なしのメッセージを 1 つ作るには、`i18n.Coded("errors.messages", code, params)` を使います。値オブジェクトの生成やデコードで得られる go-kanna/value の `*rule.Error` にも、`Code` と `Params` があります。
+`Path`、`Code`、`Params` メソッドを持つものなら何でもレンダリングできます。このパッケージはバリデーションのパッケージをインポートしません。`validator.FieldError` のように、パスの上のフィールドだけを map のキーと添字を除いて返す `FieldNames() []string` メソッドを持たせることもできます。このメソッドを持たないもののパスと、`FieldNames` が何も返さないもの（手で作った `FieldError` など）のパスは、1 つのフィールドの名前として扱うので、`address.zip` は `errors.attributes.address.zip` だけで探し、書き下すと `Address.zip` になります。フィールド名なしのメッセージを 1 つ作るには、`i18n.Coded("errors.messages", code, params)` を使います。値オブジェクトの生成やデコードで得られる go-kanna/value の `*rule.Error` にも、`Code` と `Params` があります。
 
 `errors.format`、`errors.attributes`、`errors.messages` はこれらの関数が読むキーなので、コンストラクタは生成されません。`errors.not_found` のような `errors` の下のほかのキーは、ふつうのメッセージです。
 

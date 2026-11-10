@@ -5,18 +5,24 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/go-kanna/validator"
 )
 
 // Problem is a broken rule as a validation reports it: the path of the field
 // it broke on, such as "address.zip" or "tags[1]", or "base" for the value as
 // a whole, and the code and params naming the rule. validator.FieldError of
-// go-kanna/validator is one, and so is anything with these methods.
+// go-kanna/validator is one, and so is anything with these methods: this
+// package imports no validation package.
 type Problem interface {
 	Path() string
 	Code() string
 	Params() map[string]any
+}
+
+// fieldNamer is a Problem that tells the fields on its path from the map keys
+// and indexes, as validator.FieldError does: FieldNames returns the names of
+// the fields alone, in order.
+type fieldNamer interface {
+	FieldNames() []string
 }
 
 // basePath is where a problem with the value as a whole is reported, as
@@ -43,10 +49,11 @@ func ErrorMessages[P Problem](l Localizer, problems []P) map[string][]string {
 // address.zip, then the last of them, zip, and failing both, the last written
 // out, Completed at for completed_at. A map key or an index on the path is no
 // field and is left out: tags[1] is named as tags, and notes.first_note, under
-// the key first_note of the map notes, as notes. Only a validator.FieldError
-// tells a field from a key: the path of any other problem, or of a FieldError
-// without Segments, is named as one field. A confirmation's attribute, the
-// other field it names, is named as the field beside it.
+// the key first_note of the map notes, as notes. Only a problem with a
+// FieldNames method, as validator.FieldError has, tells a field from a key: the
+// path of any other problem, or of one whose FieldNames returns none, is named
+// as one field. A confirmation's attribute, the other field it names, is named
+// as the field beside it.
 func FullMessages[P Problem](l Localizer, problems []P) []string {
 	out := make([]string, len(problems))
 	for i, p := range problems {
@@ -76,20 +83,12 @@ func (l Localizer) problemMessage(p Problem) string {
 // fieldNames returns the names of the fields on the path of p, as FullMessages
 // says.
 func fieldNames(p Problem) []string {
-	fe, ok := any(p).(validator.FieldError)
-	if !ok {
-		return []string{p.Path()}
-	}
-	var names []string
-	for _, s := range fe.Segments {
-		if s.Kind == validator.FieldSegment {
-			names = append(names, s.Name)
+	if n, ok := p.(fieldNamer); ok {
+		if names := n.FieldNames(); len(names) > 0 {
+			return names
 		}
 	}
-	if len(names) == 0 {
-		return []string{p.Path()}
-	}
-	return names
+	return []string{p.Path()}
 }
 
 // attributeName names the field whose path goes through the fields names.
