@@ -178,17 +178,18 @@ other counts of that category too: 10 through 20, for one.
 | Form            | Parameter | Rendered                                                                             |
 |-----------------|-----------|--------------------------------------------------------------------------------------|
 | `{name}`        | `string`  | as it is                                                                             |
-| `{name:int}`    | `int`     | as it is: counts, IDs                                                                |
+| `{name:int}`    | `int`     | in the language's digits, without grouping: counts, IDs                              |
 | `{name:number}` | `float64` | in the language's format, three decimals at most: `1,234.56` in en, `1.234,56` in de |
 | `{{`, `}}`      |           | literal braces                                                                       |
 
-`{name}` writes no kind, and is a `string` where nothing else gives it one; `{name:string}` says it is one, which another
-form or the default language giving it another kind contradicts. `count` in a plural message is always an `int`. A
-`number` is written as CLDR's default pattern for the language has it, which keeps three fraction digits at most:
-1234.5678 renders as `1,234.568`. Within a message, a placeholder written without a kind takes the one written for it
-elsewhere (in another plural form, say), and two different kinds are an error. The default language decides each
-parameter's type: a translation may leave the kind off, as `ja.yaml` above does for the price, and one that writes a
-different kind stops generation.
+`{name}` writes no kind, and is a `string` where nothing else gives it one; `{name:string}` says it is one, which
+another form or the default language giving it another kind contradicts. `count` in a plural message is always an `int`.
+An `int` is written in the digits of the language and without grouping, so that an ID reads as one: 1234 renders as
+`1234` in en and `١٢٣٤` in ar. A `number` is written as CLDR's default pattern for the language has it, which keeps
+three fraction digits at most: 1234.5678 renders as `1,234.568`. Within a message, a placeholder written without a kind
+takes the one written for it elsewhere (in another plural form, say), and two different kinds are an error. The default
+language decides each parameter's type: a translation may leave the kind off, as `ja.yaml` above does for the price, and
+one that writes a different kind stops generation.
 
 Parameters come in the order of the names of their placeholders, a plural message's `count` first, so that rewording a
 text cannot swap two arguments of one type: `"{last}, {first}"` makes `FullName(first string, last string)`, as
@@ -288,12 +289,14 @@ vanishes.
 The params of a code render by their Go type. A kind written in those keys, such as `{count:int}`, would decide nothing,
 and stops generation. What a count's type does decide is the plural form: only an int picks one, and any other count
 takes `other`. The lengths of `too_short`, `too_long`, and `wrong_length` are always an int, so they may be written in
-plural forms. The bound of `greater_than` and the other numeric codes has the type of the field it was checked on, an
-int, a float64, or an int64, so keep its message single.
+plural forms. The bound of `greater_than` and the other numeric codes has the type of the field it was checked on, such
+as a float32 or a `type Ratio float64`, so keep its message single.
 
-A param that is neither a string, an int, nor a float64 renders through fmt, as `i18n.Arg` says: a `time.Time` a hook
-passed as `count` reads `2000-01-01 00:00:00 +0000 UTC`. To write one otherwise, replace it in the params before
-building the message; `Params` of either package returns a copy.
+A number renders by its kind, whatever its type is named: an integer as an `int` does and a float as a `number` does, so
+a float32 bound of 1000.5 reads `1.000,5` in de. A param that is neither a string nor a number, or whose type has a
+`String` or `Error` method, renders through fmt, as `i18n.Arg` says: a `time.Time` a hook passed as `count` reads
+`2000-01-01 00:00:00 +0000 UTC`, and an enum with a `String` method reads as its name. To write one otherwise, replace
+it in the params before building the message; `Params` of either package returns a copy.
 
 ## Checking the codes your code reports
 

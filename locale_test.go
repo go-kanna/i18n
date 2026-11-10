@@ -4,6 +4,7 @@ import (
 	"math"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/go-kanna/i18n"
 )
@@ -12,6 +13,12 @@ func text(s string) i18n.Segment  { return i18n.Segment{Text: s} }
 func param(s string) i18n.Segment { return i18n.Segment{Param: s} }
 
 func arg(name string, value any) i18n.Arg { return i18n.Arg{Name: name, Value: value} }
+
+type (
+	ratio float64
+	level int
+	label string
+)
 
 func TestRender(t *testing.T) {
 	t.Parallel()
@@ -67,14 +74,36 @@ func TestRender(t *testing.T) {
 			want:  "Total: 1,234.568",
 		},
 		{name: "float64 rounded to none", lang: "en", entry: total, args: []i18n.Arg{arg("price", 0.0001)}, want: "Total: 0"},
-		// What no generated constructor passes is left to fmt.
+		// A number of any type renders in the language's format, by its kind.
 		{
-			name:  "other types",
-			lang:  "en",
+			name:  "float32 in de",
+			lang:  "de",
 			entry: total,
 			args:  []i18n.Arg{arg("price", float32(1234.5))},
-			want:  "Total: 1234.5",
+			want:  "Total: 1.234,5",
 		},
+		{
+			name:  "named float in de",
+			lang:  "de",
+			entry: total,
+			args:  []i18n.Arg{arg("price", ratio(1234.5))},
+			want:  "Total: 1.234,5",
+		},
+		{name: "int64", lang: "en", entry: total, args: []i18n.Arg{arg("price", int64(-1234567))}, want: "Total: -1234567"},
+		{
+			name:  "uint64 max",
+			lang:  "en",
+			entry: total,
+			args:  []i18n.Arg{arg("price", uint64(math.MaxUint64))},
+			want:  "Total: 18446744073709551615",
+		},
+		{name: "named int", lang: "en", entry: total, args: []i18n.Arg{arg("price", level(1234567))}, want: "Total: 1234567"},
+		{name: "int in ar", lang: "ar", entry: total, args: []i18n.Arg{arg("price", 1234567)}, want: "Total: ١٢٣٤٥٦٧"},
+		{name: "uint8 in fa", lang: "fa", entry: total, args: []i18n.Arg{arg("price", uint8(7))}, want: "Total: ۷"},
+		{name: "plural count in bn", lang: "bn", entry: forms, args: []i18n.Arg{arg("count", 2)}, want: "other:২"},
+		// A value that says how it is written is left to fmt.
+		{name: "stringer", lang: "de", entry: total, args: []i18n.Arg{arg("price", time.Second)}, want: "Total: 1s"},
+		{name: "named string", lang: "en", entry: total, args: []i18n.Arg{arg("price", label("x"))}, want: "Total: x"},
 		{name: "nil", lang: "en", entry: total, args: []i18n.Arg{arg("price", nil)}, want: "Total: <nil>"},
 
 		{name: "plural one", lang: "en", entry: items, args: []i18n.Arg{arg("count", 1)}, want: "You have 1 item."},
@@ -103,11 +132,11 @@ func TestRender(t *testing.T) {
 		{name: "plural 0 in en", lang: "en", entry: forms, args: []i18n.Arg{arg("count", 0)}, want: "zero:0"},
 		{name: "plural 0 in fr", lang: "fr", entry: forms, args: []i18n.Arg{arg("count", 0)}, want: "zero:0"},
 		{name: "plural 1 in fr", lang: "fr", entry: forms, args: []i18n.Arg{arg("count", 1)}, want: "one:1"},
-		{name: "plural 0 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 0)}, want: "zero:0"},
+		{name: "plural 0 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 0)}, want: "zero:٠"},
 		{name: "plural 10 in lv", lang: "lv", entry: forms, args: []i18n.Arg{arg("count", 10)}, want: "zero:10"},
 		{name: "plural 2 in en", lang: "en", entry: forms, args: []i18n.Arg{arg("count", 2)}, want: "other:2"},
-		{name: "plural 2 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 2)}, want: "two:2"},
-		{name: "plural 100 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 100)}, want: "other:100"},
+		{name: "plural 2 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 2)}, want: "two:٢"},
+		{name: "plural 100 in ar", lang: "ar", entry: forms, args: []i18n.Arg{arg("count", 100)}, want: "other:١٠٠"},
 		{name: "plural 2 in ru", lang: "ru", entry: forms, args: []i18n.Arg{arg("count", 2)}, want: "few:2"},
 		{name: "plural 5 in ru", lang: "ru", entry: forms, args: []i18n.Arg{arg("count", 5)}, want: "many:5"},
 		{name: "plural 21 in ru", lang: "ru", entry: forms, args: []i18n.Arg{arg("count", 21)}, want: "one:21"},
