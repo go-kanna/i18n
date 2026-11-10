@@ -124,7 +124,8 @@ func (b Bundle) Localizer(langs ...string) Localizer {
 // either case, as Q=0.5, the way RFC 9110 has it.
 func parseLanguages(s string) []language.Tag {
 	var entries []string
-	for e := range strings.SplitSeq(s, ",") {
+	//nolint:modernize // ranging over SplitSeq races in the type checker of Go 1.27.3 when tests load this package
+	for _, e := range strings.Split(s, ",") {
 		if tag, params, ok := strings.Cut(e, ";"); ok {
 			e = tag + ";" + strings.ToLower(params)
 		}
