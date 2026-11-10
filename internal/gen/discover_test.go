@@ -109,6 +109,20 @@ func TestReadLocales(t *testing.T) {
 			},
 		},
 		{
+			name: "a language without CLDR data",
+			files: map[string]string{
+				"locales/en.yaml":  msg,
+				"locales/app.yaml": msg,
+				"locales/haw.yaml": msg,
+			},
+			wantCatalogs: []string{"app app.yaml 1", "en en.yaml 1", "haw haw.yaml 1"},
+			wantDiags: []string{
+				"locales/app.yaml: warning: x/text holds no CLDR data for app, " +
+					"so it has no plural rules or number format of its own\n" +
+					`  check that "app" names a language; keep other files out of locales`,
+			},
+		},
+		{
 			name: "named like a locale file, but not YAML",
 			files: map[string]string{
 				"locales/en.yaml": msg,

@@ -145,7 +145,8 @@ The locale directory is flat (one file per language, no recursion), and the file
 language: `en.yaml`, `pt-BR.yaml`, `ja.yml`. Nothing named like a language is skipped in silence: a subdirectory such as
 `locales/en/` or `locales/en.yaml/`, or a file in another format such as `en.json` or `en.toml`, stops generation. Other
 files are skipped with a warning, so a stray `config.yaml` does not fail the run, and names starting with a dot are
-skipped without one.
+skipped without one. Three letters name a language under ISO 639-3, so a stray `app.yaml` or `dev.yaml` is read as one;
+a language that x/text holds no CLDR data for, with no plural rules or number format of its own, gets a warning.
 
 Nested mappings become dot-joined keys, and keys become constructor names: `user.not_found` generates `UserNotFound()`.
 Each part of a key matches `[a-z][a-z0-9_]*`. Two keys that generate one name, or a key that generates a name the
@@ -361,7 +362,7 @@ Warnings do not:
   from a translation into another language that has one: Japanese readers get the built-in Japanese.
 - plural forms a language uses that a message does not provide, and forms a message provides that its language never
   takes, such as `one` in Japanese, which no count renders with
-- files skipped in the locale directory
+- files skipped in the locale directory, and locale files for a language without CLDR data
 
 A misspelled key, placeholder, plural category, or kind comes with the name it was probably meant to be.
 
