@@ -246,8 +246,10 @@ if errs, ok := errors.AsType[validator.Errors](err); ok {
 particle, `を入力してください`, so a message shown anywhere else reads better from `i18n.FullMessages`.
 
 The texts of every code kanna-validator and kanna-value report are built in, in English as Rails writes them and in
-Japanese as rails-i18n does. A locale file names the fields, overrides any built-in text, and adds the codes of rules of
-your own, which the default language writes first, as it does every key:
+Japanese as rails-i18n does. Rails has no texts for the counts of a slice or a map, `too_few`, `too_many`, and
+`wrong_count`, so theirs are the texts of the lengths of a string with items for characters:
+`is too long (maximum is 3 items)`, `は3件以内で入力してください`. A locale file names the fields, overrides any built-in
+text, and adds the codes of rules of your own, which the default language writes first, as it does every key:
 
 ```yaml
 # locales/en.yaml
@@ -271,11 +273,13 @@ errors:
 
 - `errors.format` puts a field's name and its message together: `"{attribute} {message}"` in English,
   `"{attribute}{message}"` in Japanese.
-- A field is named by `errors.attributes`: its path with any index dropped, `address.zip` or `tags` for `tags[1]`,
-  then the last part of it, `zip`, and failing both, the last part written out: `Completed at` for `completed_at`. A
-  camelCase JSON name is not split into words, so `completedAt` reads `CompletedAt` until `errors.attributes` names it.
-  A `confirmation`'s `attribute`, the field it is checked against, is named the same way. The path is one key, so that
-  `address` and `address.zip` are named side by side; nested under `address`, they could not be, and generation stops.
+- A field is named by `errors.attributes`: the fields on its path, `address.zip`, then the last of them, `zip`, and
+  failing both, the last written out: `Completed at` for `completed_at`. An index or a map key on the path is no field
+  and is left out, so `tags[1]` is named as `tags`, and `notes.first_note`, the key `first_note` of the map `notes`, as
+  `notes`. A camelCase JSON name is not split into words, so `completedAt` reads `CompletedAt` until
+  `errors.attributes` names it. A `confirmation`'s `attribute`, the field it is checked against, is named as the field
+  beside it. The path is one key, so that `address` and `address.zip` are named side by side; nested under `address`,
+  they could not be, and generation stops.
 - A problem with the value as a whole, at `base`, reads as its message alone.
 - A message is looked up in the reader's language and its parents, the application's text first and then the built-in
   one, before the default language: a reader of Japanese gets the built-in Japanese rather than the application's
@@ -285,9 +289,12 @@ errors:
   text is overridden in the forms of its own language, plural or not, whatever the default language writes, and fills
   its own placeholders, such as `{count}`; the name of a field fills none.
 
-Anything with `Path`, `Code`, and `Params` methods renders: this package imports no validation package. For one message
-without its field, `i18n.Coded("errors.messages", code, params)` builds it. A `*rule.Error` of go-kanna/value, from
-building or decoding a value type, has `Code` and `Params` as well.
+Anything with `Path`, `Code`, and `Params` methods renders: this package imports no validation package. A problem may
+also have a `FieldNames() []string` method, as `validator.FieldError` does, returning the fields on its path without the
+map keys and indexes; the path of one without it, or whose `FieldNames` returns none, such as a `FieldError` built by
+hand, is taken as the name of one field, so `address.zip` is named by `errors.attributes.address.zip` alone, and written
+out as `Address.zip`. For one message without its field, `i18n.Coded("errors.messages", code, params)` builds it. A
+`*rule.Error` of go-kanna/value, from building or decoding a value type, has `Code` and `Params` as well.
 
 `errors.format`, `errors.attributes`, and `errors.messages` are what these functions read, so no constructor is
 generated for them. Other keys under `errors`, such as `errors.not_found`, are messages like any other.
@@ -297,9 +304,9 @@ vanishes.
 
 The params of a code render by their Go type. A kind written in those keys, such as `{count:int}`, would decide nothing,
 and stops generation. What a count's type does decide is the plural form: only an int picks one, and any other count
-takes `other`. The lengths of `too_short`, `too_long`, and `wrong_length` are always an int, so they may be written in
-plural forms. The bound of `greater_than` and the other numeric codes has the type of the field it was checked on, such
-as a float32 or a `type Ratio float64`, so keep its message single.
+takes `other`. The lengths of `too_short`, `too_long`, `wrong_length`, `too_few`, `too_many`, and `wrong_count` are
+always an int, so they may be written in plural forms. The bound of `greater_than` and the other numeric codes has the
+type of the field it was checked on, such as a float32 or a `type Ratio float64`, so keep its message single.
 
 A number renders by its kind, whatever its type is named: an integer as an `int` does and a float as a `number` does, so
 a float32 bound of 1000.5 reads `1.000,5` in de. A param that is neither a string nor a number, or whose type has a

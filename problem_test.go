@@ -11,15 +11,25 @@ import (
 	"github.com/go-kanna/i18n/internal/runtime"
 )
 
-// problem is a broken rule as validator.FieldError reports one.
+// problem is a broken rule as validator.FieldError reports one, telling the
+// fields on its path from the map keys and indexes.
 type problem struct {
 	path, code string
+	fields     []string
 	params     map[string]any
 }
 
 func (p problem) Path() string           { return p.path }
+func (p problem) FieldNames() []string   { return p.fields }
 func (p problem) Code() string           { return p.code }
 func (p problem) Params() map[string]any { return maps.Clone(p.params) }
+
+// pathProblem is a broken rule with a path alone.
+type pathProblem struct{ path, code string }
+
+func (p pathProblem) Path() string         { return p.path }
+func (p pathProblem) Code() string         { return p.code }
+func (pathProblem) Params() map[string]any { return nil }
 
 // problemBundle is what kanna-i18n compiles these files into:
 //
@@ -59,15 +69,24 @@ func problemBundle() i18n.Bundle {
 }
 
 var problems = []problem{
-	{path: "title", code: "blank"},
-	{path: "tags[1]", code: "too_long", params: map[string]any{"count": 20}},
-	{path: "tags[2]", code: "too_long", params: map[string]any{"count": 1}},
-	{path: "address.zip", code: "invalid"},
-	{path: "completed_at", code: "greater_than_or_equal_to", params: map[string]any{"count": 2000}},
-	{path: "confirm", code: "confirmation", params: map[string]any{"attribute": "password"}},
-	{path: "email", code: "corp_domain"},
-	{path: "base", code: "too_young_for_admin"},
-	{path: "name", code: "taken"},
+	{path: "title", fields: []string{"title"}, code: "blank"},
+	{path: "tags[1]", fields: []string{"tags"}, code: "too_long", params: map[string]any{"count": 20}},
+	{path: "tags[2]", fields: []string{"tags"}, code: "too_long", params: map[string]any{"count": 1}},
+	{path: "tags", fields: []string{"tags"}, code: "too_many", params: map[string]any{"count": 3}},
+	{path: "tags", fields: []string{"tags"}, code: "too_few", params: map[string]any{"count": 1}},
+	{path: "tags", fields: []string{"tags"}, code: "wrong_count", params: map[string]any{"count": 2}},
+	{path: "address.zip", fields: []string{"address", "zip"}, code: "invalid"},
+	{
+		path: "completed_at", fields: []string{"completed_at"},
+		code: "greater_than_or_equal_to", params: map[string]any{"count": 2000},
+	},
+	{
+		path: "confirm", fields: []string{"confirm"},
+		code: "confirmation", params: map[string]any{"attribute": "password"},
+	},
+	{path: "email", fields: []string{"email"}, code: "corp_domain"},
+	{path: "base", fields: []string{"base"}, code: "too_young_for_admin"},
+	{path: "name", fields: []string{"name"}, code: "taken"},
 }
 
 func TestFullMessages(t *testing.T) {
@@ -84,6 +103,9 @@ func TestFullMessages(t *testing.T) {
 				"Title can't be blank",
 				"Tags is too long (maximum is 20 characters)",
 				"Tags is too long (maximum is 1 character)",
+				"Tags is too long (maximum is 3 items)",
+				"Tags is too short (minimum is 1 item)",
+				"Tags is the wrong length (should be 2 items)",
 				"Zip is invalid",
 				"Completed at must be greater than or equal to 2000",
 				"Confirm doesn't match Password",
@@ -100,6 +122,9 @@ func TestFullMessages(t *testing.T) {
 				"タイトルは必須です",
 				"Tagsは20文字以内で入力してください",
 				"Tagsは1文字以内で入力してください",
+				"Tagsは3件以内で入力してください",
+				"Tagsは1件以上で入力してください",
+				"Tagsは2件で入力してください",
 				"郵便番号は不正な値です",
 				"Completed atは2000以上の値にしてください",
 				"確認用パスワードとパスワードの入力が一致しません",
@@ -156,10 +181,74 @@ func TestFullMessages_leavesParams(t *testing.T) {
 func TestFullMessages_namesAFieldAndItsFields(t *testing.T) {
 	t.Parallel()
 
-	got := i18n.FullMessages(problemBundle().Localizer("ja"),
-		[]problem{{path: "address", code: "blank"}, {path: "address.zip", code: "blank"}})
+	got := i18n.FullMessages(problemBundle().Localizer("ja"), []problem{
+		{path: "address", fields: []string{"address"}, code: "blank"},
+		{path: "address.zip", fields: []string{"address", "zip"}, code: "blank"},
+	})
 	if want := []string{"住所は必須です", "郵便番号は必須です"}; !slices.Equal(got, want) {
 		t.Errorf("FullMessages = %q, want %q", got, want)
+	}
+}
+
+// A map key and an index on a path are no fields: a field is named by the
+// fields alone, even when a key spells the name of one.
+func TestFullMessages_skipsKeysAndIndexes(t *testing.T) {
+	t.Parallel()
+
+	got := i18n.FullMessages(problemBundle().Localizer("ja"), []problem{
+		{path: "notes.first_note", fields: []string{"notes"}, code: "blank"},
+		{path: "labels.zip", fields: []string{"labels"}, code: "blank"},
+		{path: "address[0].zip", fields: []string{"address", "zip"}, code: "blank"},
+		{
+			path: "accounts.main.confirm", fields: []string{"accounts", "confirm"},
+			code: "confirmation", params: map[string]any{"attribute": "password"},
+		},
+	})
+	want := []string{
+		"Notesは必須です",
+		"Labelsは必須です",
+		"郵便番号は必須です",
+		"確認用パスワードとパスワードの入力が一致しません",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("FullMessages = %q, want %q", got, want)
+	}
+}
+
+// Without FieldNames, or with none, a path names one field as it is spelled:
+// what the dots and brackets of a path step into, a field or a key, only
+// FieldNames says.
+func TestFullMessages_withoutFieldNames(t *testing.T) {
+	t.Parallel()
+
+	want := []string{
+		"タイトルは必須です",
+		"郵便番号は必須です",
+		"Notes.first noteは必須です",
+		"Tags[1]は必須です",
+	}
+	paths := []string{"title", "address.zip", "notes.first_note", "tags[1]"}
+
+	plain := make([]pathProblem, 0, len(paths))
+	for _, path := range paths {
+		plain = append(plain, pathProblem{path: path, code: "blank"})
+	}
+	if got := i18n.FullMessages(problemBundle().Localizer("ja"), plain); !slices.Equal(got, want) {
+		t.Errorf("FullMessages without FieldNames =\n%q\nwant\n%q", got, want)
+	}
+
+	for _, fields := range [][]string{nil, {}} {
+		none := make([]problem, 0, len(paths)+1)
+		for _, path := range paths {
+			none = append(none, problem{path: path, fields: fields, code: "blank"})
+		}
+		none = append(none, problem{
+			path: "confirm", fields: fields, code: "confirmation", params: map[string]any{"attribute": "password"},
+		})
+		got := i18n.FullMessages(problemBundle().Localizer("ja"), none)
+		if want := append(slices.Clone(want), "確認用パスワードとパスワードの入力が一致しません"); !slices.Equal(got, want) {
+			t.Errorf("FullMessages with FieldNames %#v =\n%q\nwant\n%q", fields, got, want)
+		}
 	}
 }
 

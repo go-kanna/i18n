@@ -2,7 +2,6 @@ package i18n
 
 import (
 	"maps"
-	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -17,6 +16,13 @@ type Problem interface {
 	Path() string
 	Code() string
 	Params() map[string]any
+}
+
+// fieldNamer is a Problem that tells the fields on its path from the map keys
+// and indexes, as validator.FieldError does: FieldNames returns the names of
+// the fields alone, in order.
+type fieldNamer interface {
+	FieldNames() []string
 }
 
 // basePath is where a problem with the value as a whole is reported, as
@@ -39,10 +45,15 @@ func ErrorMessages[P Problem](l Localizer, problems []P) map[string][]string {
 // can't be blank" or "タイトルを入力してください". A problem at base reads as its
 // message alone.
 //
-// The field is named by errors.attributes: the path with any index dropped,
-// address.zip or tags, then its last part, zip, and failing both, the last part
-// written out, Completed at for completed_at. A confirmation's attribute, the
-// other field it names, is named the same way.
+// The field is named by errors.attributes: the names of the fields on its path,
+// address.zip, then the last of them, zip, and failing both, the last written
+// out, Completed at for completed_at. A map key or an index on the path is no
+// field and is left out: tags[1] is named as tags, and notes.first_note, under
+// the key first_note of the map notes, as notes. Only a problem with a
+// FieldNames method, as validator.FieldError has, tells a field from a key: the
+// path of any other problem, or of one whose FieldNames returns none, is named
+// as one field. A confirmation's attribute, the other field it names, is named
+// as the field beside it.
 func FullMessages[P Problem](l Localizer, problems []P) []string {
 	out := make([]string, len(problems))
 	for i, p := range problems {
@@ -52,7 +63,7 @@ func FullMessages[P Problem](l Localizer, problems []P) []string {
 			continue
 		}
 		out[i] = l.Localize(Message{Key: "errors.format", Args: []Arg{
-			{Name: "attribute", Value: l.attributeName(p.Path())},
+			{Name: "attribute", Value: l.attributeName(fieldNames(p))},
 			{Name: "message", Value: msg},
 		}})
 	}
@@ -63,18 +74,26 @@ func FullMessages[P Problem](l Localizer, problems []P) []string {
 func (l Localizer) problemMessage(p Problem) string {
 	params := maps.Clone(p.Params())
 	if other, ok := params["attribute"].(string); ok {
-		params["attribute"] = l.attributeName(other)
+		names := fieldNames(p)
+		params["attribute"] = l.attributeName(append(names[:len(names)-1:len(names)-1], other))
 	}
 	return l.Localize(Coded("errors.messages", p.Code(), params))
 }
 
-// indices matches the indices and map keys a path holds, such as [1].
-var indices = regexp.MustCompile(`\[[^\]]*\]`)
+// fieldNames returns the names of the fields on the path of p, as FullMessages
+// says.
+func fieldNames(p Problem) []string {
+	if n, ok := p.(fieldNamer); ok {
+		if names := n.FieldNames(); len(names) > 0 {
+			return names
+		}
+	}
+	return []string{p.Path()}
+}
 
-// attributeName names the field at path as FullMessages says.
-func (l Localizer) attributeName(path string) string {
-	path = indices.ReplaceAllString(path, "")
-	last := path[strings.LastIndex(path, ".")+1:]
+// attributeName names the field whose path goes through the fields names.
+func (l Localizer) attributeName(names []string) string {
+	path, last := strings.Join(names, "."), names[len(names)-1]
 	for _, key := range []string{"errors.attributes." + path, "errors.attributes." + last} {
 		if l.has(key) {
 			return l.Localize(Message{Key: key})
