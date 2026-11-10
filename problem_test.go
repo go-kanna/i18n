@@ -5,13 +5,15 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/go-kanna/validator"
 	"golang.org/x/text/language"
 
 	"github.com/go-kanna/i18n"
 	"github.com/go-kanna/i18n/internal/runtime"
 )
 
-// problem is a broken rule as validator.FieldError reports one.
+// problem is a broken rule with a path alone, as a Problem of a package other
+// than go-kanna/validator reports one.
 type problem struct {
 	path, code string
 	params     map[string]any
@@ -58,16 +60,21 @@ func problemBundle() i18n.Bundle {
 	)
 }
 
-var problems = []problem{
-	{path: "title", code: "blank"},
-	{path: "tags[1]", code: "too_long", params: map[string]any{"count": 20}},
-	{path: "tags[2]", code: "too_long", params: map[string]any{"count": 1}},
-	{path: "address.zip", code: "invalid"},
-	{path: "completed_at", code: "greater_than_or_equal_to", params: map[string]any{"count": 2000}},
-	{path: "confirm", code: "confirmation", params: map[string]any{"attribute": "password"}},
-	{path: "email", code: "corp_domain"},
-	{path: "base", code: "too_young_for_admin"},
-	{path: "name", code: "taken"},
+func problems() validator.Errors {
+	var errs validator.Errors
+	errs.Add(validator.Field("title"), validator.Blank())
+	errs.Add(validator.Index(validator.Field("tags"), 1), validator.TooLong(20))
+	errs.Add(validator.Index(validator.Field("tags"), 2), validator.TooLong(1))
+	errs.Add(validator.Field("tags"), validator.TooMany(3))
+	errs.Add(validator.Field("tags"), validator.TooFew(1))
+	errs.Add(validator.Field("tags"), validator.WrongCount(2))
+	errs.Add(validator.Field("address", "zip"), validator.Invalid())
+	errs.Add(validator.Field("completed_at"), validator.GreaterThanOrEqualTo(2000))
+	errs.Add(validator.Field("confirm"), validator.Confirmation("password"))
+	errs.Add(validator.Field("email"), validator.Fail("corp_domain"))
+	errs.Add(validator.Base, validator.Fail("too_young_for_admin"))
+	errs.Add(validator.Field("name"), validator.Fail("taken"))
+	return errs
 }
 
 func TestFullMessages(t *testing.T) {
@@ -84,6 +91,9 @@ func TestFullMessages(t *testing.T) {
 				"Title can't be blank",
 				"Tags is too long (maximum is 20 characters)",
 				"Tags is too long (maximum is 1 character)",
+				"Tags is too long (maximum is 3 items)",
+				"Tags is too short (minimum is 1 item)",
+				"Tags is the wrong length (should be 2 items)",
 				"Zip is invalid",
 				"Completed at must be greater than or equal to 2000",
 				"Confirm doesn't match Password",
@@ -100,6 +110,9 @@ func TestFullMessages(t *testing.T) {
 				"タイトルは必須です",
 				"Tagsは20文字以内で入力してください",
 				"Tagsは1文字以内で入力してください",
+				"Tagsは3件以内で入力してください",
+				"Tagsは1件以上で入力してください",
+				"Tagsは2件で入力してください",
 				"郵便番号は不正な値です",
 				"Completed atは2000以上の値にしてください",
 				"確認用パスワードとパスワードの入力が一致しません",
@@ -114,7 +127,7 @@ func TestFullMessages(t *testing.T) {
 		t.Run(tt.lang, func(t *testing.T) {
 			t.Parallel()
 
-			got := i18n.FullMessages(problemBundle().Localizer(tt.lang), problems)
+			got := i18n.FullMessages(problemBundle().Localizer(tt.lang), problems())
 			if !slices.Equal(got, tt.want) {
 				t.Errorf("FullMessages =\n%q\nwant\n%q", got, tt.want)
 			}
@@ -156,9 +169,68 @@ func TestFullMessages_leavesParams(t *testing.T) {
 func TestFullMessages_namesAFieldAndItsFields(t *testing.T) {
 	t.Parallel()
 
-	got := i18n.FullMessages(problemBundle().Localizer("ja"),
-		[]problem{{path: "address", code: "blank"}, {path: "address.zip", code: "blank"}})
+	var errs validator.Errors
+	errs.Add(validator.Field("address"), validator.Blank())
+	errs.Add(validator.Field("address", "zip"), validator.Blank())
+	got := i18n.FullMessages(problemBundle().Localizer("ja"), errs)
 	if want := []string{"住所は必須です", "郵便番号は必須です"}; !slices.Equal(got, want) {
+		t.Errorf("FullMessages = %q, want %q", got, want)
+	}
+}
+
+// A map key and an index on a path are no fields: a field is named by the
+// fields alone, even when a key spells the name of one.
+func TestFullMessages_skipsKeysAndIndexes(t *testing.T) {
+	t.Parallel()
+
+	var errs validator.Errors
+	errs.Add(validator.Key(validator.Field("notes"), "first_note"), validator.Blank())
+	errs.Add(validator.Key(validator.Field("labels"), "zip"), validator.Blank())
+	var zip validator.Errors
+	zip.Add(validator.Field("zip"), validator.Blank())
+	errs.Nest(validator.Index(validator.Field("address"), 0), zip)
+	var account validator.Errors
+	account.Add(validator.Field("confirm"), validator.Confirmation("password"))
+	errs.Nest(validator.Key(validator.Field("accounts"), "main"), account)
+	got := i18n.FullMessages(problemBundle().Localizer("ja"), errs)
+	want := []string{
+		"Notesは必須です",
+		"Labelsは必須です",
+		"郵便番号は必須です",
+		"確認用パスワードとパスワードの入力が一致しません",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("FullMessages = %q, want %q", got, want)
+	}
+}
+
+// Without Segments a path names one field as it is spelled: what the dots and
+// brackets of a path step into, a field or a key, only Segments say.
+func TestFullMessages_withoutSegments(t *testing.T) {
+	t.Parallel()
+
+	got := i18n.FullMessages(problemBundle().Localizer("ja"), []problem{
+		{path: "title", code: "blank"},
+		{path: "address.zip", code: "blank"},
+		{path: "notes.first_note", code: "blank"},
+		{path: "tags[1]", code: "blank"},
+		{path: "confirm", code: "confirmation", params: map[string]any{"attribute": "password"}},
+	})
+	want := []string{
+		"タイトルは必須です",
+		"郵便番号は必須です",
+		"Notes.first noteは必須です",
+		"Tags[1]は必須です",
+		"確認用パスワードとパスワードの入力が一致しません",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("FullMessages = %q, want %q", got, want)
+	}
+
+	// A FieldError built by hand is one too.
+	got = i18n.FullMessages(problemBundle().Localizer("ja"),
+		validator.Errors{{Field: "address.zip", Err: validator.Blank()}, {Field: "tags[1]", Err: validator.Blank()}})
+	if want := []string{"郵便番号は必須です", "Tags[1]は必須です"}; !slices.Equal(got, want) {
 		t.Errorf("FullMessages = %q, want %q", got, want)
 	}
 }

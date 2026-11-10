@@ -193,7 +193,7 @@ if errs, ok := errors.AsType[validator.Errors](err); ok {
 
 `i18n.ErrorMessages` はフィールド名を含めないので、フィールドの横に出すためのものです。日本語の組み込みの文言は `を入力してください` のように助詞で始まるので、それ以外の場所に出すなら `i18n.FullMessages` が向いています。
 
-kanna-validator と kanna-value が報告するすべてのコードの文言が組み込まれています。英語は Rails の文言、日本語は rails-i18n の文言です。ロケールファイルでは、フィールドに名前を付け、どの組み込みの文言も上書きし、独自のルールのコードを追加できます。独自のコードは、ほかのキーと同じく、まずデフォルト言語に書きます:
+kanna-validator と kanna-value が報告するすべてのコードの文言が組み込まれています。英語は Rails の文言、日本語は rails-i18n の文言です。スライスと map の要素の数の `too_few`、`too_many`、`wrong_count` は Rails に文言がないので、文字列の長さの文言の「文字」を「件」に替えたものです（`is too long (maximum is 3 items)`、`は3件以内で入力してください`）。ロケールファイルでは、フィールドに名前を付け、どの組み込みの文言も上書きし、独自のルールのコードを追加できます。独自のコードは、ほかのキーと同じく、まずデフォルト言語に書きます:
 
 ```yaml
 # locales/en.yaml
@@ -216,17 +216,17 @@ errors:
 ```
 
 - `errors.format` は、フィールド名とメッセージをつなげます。英語では `"{attribute} {message}"`、日本語では `"{attribute}{message}"` です。
-- フィールド名は `errors.attributes` で決まります。まずインデックスを除いたパス（`address.zip`、`tags[1]` なら `tags`）で探し、次にその最後の部分（`zip`）で探します。どちらもなければ、最後の部分を書き下した形になります（`completed_at` なら `Completed at`）。camelCase の JSON 名は単語に分けないので、`completedAt` は `errors.attributes` で名前を付けるまで `CompletedAt` になります。`confirmation` の `attribute`（チェックの比較先のフィールド）にも同じように名前が付きます。パスは 1 つのキーとして書くので、`address` と `address.zip` を並べて名前を付けられます。`address` の下に入れ子で書くと、両方には名前を付けられないので、生成を止めます。
+- フィールド名は `errors.attributes` で決まります。まずパスの上のフィールド（`address.zip`）で探し、次にその最後のフィールド（`zip`）で探します。どちらもなければ、最後のフィールドを書き下した形になります（`completed_at` なら `Completed at`）。パスの上の添字と map のキーはフィールドではないので除きます。`tags[1]` は `tags` の名前に、map の `notes` のキー `first_note` を指す `notes.first_note` は `notes` の名前になります。camelCase の JSON 名は単語に分けないので、`completedAt` は `errors.attributes` で名前を付けるまで `CompletedAt` になります。`confirmation` の `attribute`（チェックの比較先のフィールド）は、そのフィールドと並ぶフィールドとして名前が付きます。パスは 1 つのキーとして書くので、`address` と `address.zip` を並べて名前を付けられます。`address` の下に入れ子で書くと、両方には名前を付けられないので、生成を止めます。
 - `base` に報告される、値全体についての問題は、メッセージだけになります。
 - メッセージはまず読み手の言語とその親言語で、アプリケーションの文言、組み込みの文言の順に探し、その後でデフォルト言語を探します。日本語の読み手には、アプリケーションの英語ではなく、組み込みの日本語が表示されます。デフォルト言語が上書きしていない組み込みの文言を翻訳が上書きしても、デフォルト言語が書き下しに任せているフィールドに翻訳が名前を付けても構いません。日本語は `title` に名前を付けますが、英語はそのままでも `Title` になります。組み込みの文言は、デフォルト言語の書き方によらず、その言語の形で（複数形でもそうでなくても）上書きでき、`{count}` のような組み込みの文言自身のプレースホルダを埋めます。フィールドの名前は、プレースホルダを何も埋めません。
 
-`Path`、`Code`、`Params` メソッドを持つものなら何でもレンダリングできます。このパッケージはバリデーションのパッケージをインポートしません。フィールド名なしのメッセージを 1 つ作るには、`i18n.Coded("errors.messages", code, params)` を使います。値オブジェクトの生成やデコードで得られる go-kanna/value の `*rule.Error` にも、`Code` と `Params` があります。
+`Path`、`Code`、`Params` メソッドを持つものなら何でもレンダリングできます。フィールドと map のキーや添字を見分けられるのは、`Segments` を持つ `validator.FieldError` だけです。ほかのもののパスと、`Segments` なしで手で作った `FieldError` のパスは、1 つのフィールドの名前として扱うので、`address.zip` は `errors.attributes.address.zip` だけで探し、書き下すと `Address.zip` になります。フィールド名なしのメッセージを 1 つ作るには、`i18n.Coded("errors.messages", code, params)` を使います。値オブジェクトの生成やデコードで得られる go-kanna/value の `*rule.Error` にも、`Code` と `Params` があります。
 
 `errors.format`、`errors.attributes`、`errors.messages` はこれらの関数が読むキーなので、コンストラクタは生成されません。`errors.not_found` のような `errors` の下のほかのキーは、ふつうのメッセージです。
 
 どの言語にもないコードは、`errors.messages.taken` のようにキーとしてレンダリングされるので、文言のないルールは消えずに現れます。
 
-コードのパラメータは、Go の型に従ってレンダリングされます。これらのキーに書いた種別（`{count:int}` など）は何も決めないので、生成を止めます。`count` の型が実際に決めるのは複数形です。int のときだけ形が選ばれ、それ以外の `count` は `other` になります。`too_short`、`too_long`、`wrong_length` の長さは常に int なので、複数形で書けます。`greater_than` などの数値のコードの境界値は、チェックされたフィールドの型（float32 や `type Ratio float64` など）を持つので、メッセージは複数形にせず 1 つだけ書いてください。
+コードのパラメータは、Go の型に従ってレンダリングされます。これらのキーに書いた種別（`{count:int}` など）は何も決めないので、生成を止めます。`count` の型が実際に決めるのは複数形です。int のときだけ形が選ばれ、それ以外の `count` は `other` になります。`too_short`、`too_long`、`wrong_length`、`too_few`、`too_many`、`wrong_count` の長さは常に int なので、複数形で書けます。`greater_than` などの数値のコードの境界値は、チェックされたフィールドの型（float32 や `type Ratio float64` など）を持つので、メッセージは複数形にせず 1 つだけ書いてください。
 
 数は、型の名前によらず種類でレンダリングされます。整数は `int` と同じく、浮動小数は `number` と同じく書かれ、float32 の境界値 1000.5 は de では `1.000,5` になります。文字列でも数でもないパラメータと、型に `String` か `Error` のメソッドがあるパラメータは、`i18n.Arg` の説明どおり fmt を通してレンダリングされます。フックが `count` として渡した `time.Time` は `2000-01-01 00:00:00 +0000 UTC` のように、`String` を持つ enum はその名前のように書かれます。別の形で書きたい場合は、メッセージを作る前にパラメータの中の値を置き換えてください。どちらのパッケージの `Params` もコピーを返します。
 

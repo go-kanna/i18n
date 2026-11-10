@@ -27,6 +27,18 @@ var builtin = []Catalog{
 			"is the wrong length (should be 1 character)",
 			"is the wrong length (should be {count} characters)",
 		),
+		"errors.messages.too_few": counted(
+			"is too short (minimum is 1 item)",
+			"is too short (minimum is {count} items)",
+		),
+		"errors.messages.too_many": counted(
+			"is too long (maximum is 1 item)",
+			"is too long (maximum is {count} items)",
+		),
+		"errors.messages.wrong_count": counted(
+			"is the wrong length (should be 1 item)",
+			"is the wrong length (should be {count} items)",
+		),
 		"errors.messages.greater_than":             single("must be greater than {count}"),
 		"errors.messages.greater_than_or_equal_to": single("must be greater than or equal to {count}"),
 		"errors.messages.less_than":                single("must be less than {count}"),
@@ -46,6 +58,9 @@ var builtin = []Catalog{
 		"errors.messages.too_short":                single("は{count}文字以上で入力してください"),
 		"errors.messages.too_long":                 single("は{count}文字以内で入力してください"),
 		"errors.messages.wrong_length":             single("は{count}文字で入力してください"),
+		"errors.messages.too_few":                  single("は{count}件以上で入力してください"),
+		"errors.messages.too_many":                 single("は{count}件以内で入力してください"),
+		"errors.messages.wrong_count":              single("は{count}件で入力してください"),
 		"errors.messages.greater_than":             single("は{count}より大きい値にしてください"),
 		"errors.messages.greater_than_or_equal_to": single("は{count}以上の値にしてください"),
 		"errors.messages.less_than":                single("は{count}より小さい値にしてください"),
