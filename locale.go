@@ -11,6 +11,8 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/number"
+
+	"github.com/go-kanna/i18n/internal/runtime"
 )
 
 // locale is a Catalog made ready to render: its language parsed, and a printer
@@ -81,7 +83,7 @@ func (l locale) render(e Entry, args []Arg) string {
 // count takes the form of the category it falls in under the rules of this
 // language. Without an int count, it is Other.
 func (l locale) pick(p Plural, args []Arg) Template {
-	v, _ := lookup(args, CountParam)
+	v, _ := lookup(args, runtime.CountParam)
 	n, ok := v.(int)
 	switch {
 	case !ok:

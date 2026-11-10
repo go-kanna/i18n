@@ -25,11 +25,6 @@ type Arg struct {
 	Value any
 }
 
-// CountParam is the argument whose value, an int, picks the form of a plural
-// message. It is exported for kanna-i18n, which names the count of every plural
-// constructor so.
-const CountParam = "count"
-
 // Coded returns the message keyed prefix.code, such as
 // "errors.messages.too_long", with params as its arguments. It is how an error
 // reported as a code and params, as kanna-validator and kanna-value report one,

@@ -8,6 +8,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/go-kanna/i18n"
+	"github.com/go-kanna/i18n/internal/runtime"
 )
 
 // problem is a broken rule as validator.FieldError reports one.
@@ -189,7 +190,7 @@ func TestIsBuiltin(t *testing.T) {
 		"errors.messages.taken": false,
 		"greeting":              false,
 	} {
-		if got := i18n.IsBuiltin(key); got != want {
+		if got := runtime.IsBuiltin(key); got != want {
 			t.Errorf("IsBuiltin(%q) = %t, want %t", key, got, want)
 		}
 	}
@@ -208,7 +209,7 @@ func TestBuiltinIn(t *testing.T) {
 		{"ja", "errors.messages.taken", false},
 		{"ja", "greeting", false},
 	} {
-		if got := i18n.BuiltinIn(language.MustParse(tt.lang), tt.key); got != tt.want {
+		if got := runtime.BuiltinIn(language.MustParse(tt.lang), tt.key); got != tt.want {
 			t.Errorf("BuiltinIn(%s, %q) = %t, want %t", tt.lang, tt.key, got, tt.want)
 		}
 	}
@@ -223,11 +224,11 @@ func TestBuiltinParams(t *testing.T) {
 		"errors.messages.confirmation": {"attribute"},
 		"errors.messages.blank":        nil,
 	} {
-		if got, ok := i18n.BuiltinParams(key); !ok || !slices.Equal(got, want) {
+		if got, ok := runtime.BuiltinParams(key); !ok || !slices.Equal(got, want) {
 			t.Errorf("BuiltinParams(%q) = %q, %t; want %q, true", key, got, ok, want)
 		}
 	}
-	if got, ok := i18n.BuiltinParams("greeting"); ok || got != nil {
+	if got, ok := runtime.BuiltinParams("greeting"); ok || got != nil {
 		t.Errorf("BuiltinParams(greeting) = %q, %t; want nil, false", got, ok)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-kanna/i18n"
+	"github.com/go-kanna/i18n/internal/runtime"
 )
 
 func single(segs ...i18n.Segment) i18n.Entry { return i18n.Entry{Single: segs} }
@@ -370,7 +371,7 @@ func TestLookup(t *testing.T) {
 			t.Parallel()
 
 			var got []string
-			for _, e := range i18n.Lookup(tt.b, tt.key) {
+			for _, e := range runtime.Lookup[i18n.Entry](tt.b, tt.key) {
 				got = append(got, written(e))
 			}
 			if !slices.Equal(got, tt.want) {
@@ -394,7 +395,7 @@ func TestKeys(t *testing.T) {
 	)
 	fr := i18n.NewBundle(i18n.Catalog{Lang: "fr", Entries: map[string]i18n.Entry{"greeting": single(text("Bonjour !"))}})
 
-	keys := i18n.Keys(b)
+	keys := runtime.Keys(b)
 	if !slices.IsSorted(keys) || len(slices.Compact(slices.Clone(keys))) != len(keys) {
 		t.Errorf("Keys = %q, want them sorted, each once", keys)
 	}
@@ -404,16 +405,16 @@ func TestKeys(t *testing.T) {
 		}
 	}
 	for _, key := range keys {
-		if len(i18n.Lookup(b, key)) == 0 {
+		if len(runtime.Lookup[i18n.Entry](b, key)) == 0 {
 			t.Errorf("Keys has %s, which Lookup finds no entry of", key)
 		}
 	}
 
 	// French has no built-in texts, so they render as their keys.
-	if got := i18n.Keys(fr); !slices.Equal(got, []string{"greeting"}) {
+	if got := runtime.Keys(fr); !slices.Equal(got, []string{"greeting"}) {
 		t.Errorf("Keys of a French bundle = %q, want only greeting", got)
 	}
-	if got := i18n.Keys(i18n.Bundle{}); len(got) != 0 {
+	if got := runtime.Keys(i18n.Bundle{}); len(got) != 0 {
 		t.Errorf("Keys of the zero Bundle = %q, want none", got)
 	}
 }
@@ -423,7 +424,7 @@ func TestLookup_Copies(t *testing.T) {
 
 	b := i18n.NewBundle(i18n.Catalog{Lang: "en", Entries: map[string]i18n.Entry{"greeting": single(text("Hello!"))}})
 	for _, key := range []string{"greeting", "errors.messages.too_long"} {
-		for _, e := range i18n.Lookup(b, key) {
+		for _, e := range runtime.Lookup[i18n.Entry](b, key) {
 			if e.Plural != nil {
 				e.Plural.Other[0] = text("changed through the plural")
 				e.Plural.One = nil
@@ -441,7 +442,7 @@ func TestLookup_Copies(t *testing.T) {
 		"is too long (maximum is 1 character)"; got != want {
 		t.Errorf("Localize(too_long) = %q, want %q", got, want)
 	}
-	if got, want := written(i18n.Lookup(b, "errors.messages.too_long")[0]),
+	if got, want := written(runtime.Lookup[i18n.Entry](b, "errors.messages.too_long")[0]),
 		"is too long (maximum is 1 character) | is too long (maximum is {count} characters)"; got != want {
 		t.Errorf("Lookup(too_long) = %q after a change, want %q", got, want)
 	}

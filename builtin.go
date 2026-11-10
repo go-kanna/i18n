@@ -61,10 +61,7 @@ var builtin = []Catalog{
 	}},
 }
 
-// IsBuiltin reports whether key is a built-in text, which the catalog of any
-// language may override, the default language's included or not. It is
-// exported for kanna-i18n, which lets a translation hold such a key alone.
-func IsBuiltin(key string) bool {
+func isBuiltin(key string) bool {
 	for _, c := range builtin {
 		if _, ok := c.Entries[key]; ok {
 			return true
@@ -73,10 +70,7 @@ func IsBuiltin(key string) bool {
 	return false
 }
 
-// BuiltinIn reports whether the built-in texts of the language of lang, those
-// of en for en-GB, hold key. It is exported for kanna-i18n, which does not
-// count key as missing from a catalog whose readers it renders for.
-func BuiltinIn(lang language.Tag, key string) bool {
+func builtinIn(lang language.Tag, key string) bool {
 	base, _ := lang.Base()
 	l, ok := builtinLocales[base]
 	if !ok {
@@ -86,10 +80,7 @@ func BuiltinIn(lang language.Tag, key string) bool {
 	return ok
 }
 
-// BuiltinParams returns, sorted, the names of the placeholders the built-in text
-// key fills in any language, and false when key is no built-in text. It is
-// exported for kanna-i18n, which holds a text overriding it to them.
-func BuiltinParams(key string) ([]string, bool) {
+func builtinParams(key string) ([]string, bool) {
 	var (
 		names []string
 		found bool
