@@ -15,7 +15,7 @@ import (
 	"github.com/go-kanna/internal/suggest"
 	"go.yaml.in/yaml/v3"
 
-	"github.com/go-kanna/i18n"
+	"github.com/go-kanna/i18n/internal/runtime"
 )
 
 // pluralKey is the key of the mapping that holds the forms of a plural
@@ -259,7 +259,7 @@ func (p *localeParser) form(v *yaml.Node, key, category string) (form, bool) {
 
 	t, ds := parseTemplate(v.Value, p.pos(v))
 	if category != "" {
-		i := slices.IndexFunc(t.params, func(q param) bool { return q.name == i18n.CountParam })
+		i := slices.IndexFunc(t.params, func(q param) bool { return q.name == runtime.CountParam })
 		if i >= 0 && t.params[i].kind != kindInt && t.params[i].explicit {
 			ds = append(ds, diag.Errorf(p.pos(v),
 				"%s writes the count as %s, but the count of a plural message is an int", what, t.params[i].kind))

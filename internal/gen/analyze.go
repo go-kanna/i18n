@@ -15,7 +15,7 @@ import (
 	"golang.org/x/text/feature/plural"
 	"golang.org/x/text/language"
 
-	"github.com/go-kanna/i18n"
+	"github.com/go-kanna/i18n/internal/runtime"
 )
 
 // localizerFunc is the function the generated file declares besides the
@@ -148,7 +148,7 @@ func constructors(def catalog, declared map[string]token.Position) ([]message, [
 func entryParams(e entry) ([]param, []diag.Diag) {
 	var params []param
 	if e.plural() {
-		params = []param{{name: i18n.CountParam, kind: kindInt, explicit: true}}
+		params = []param{{name: runtime.CountParam, kind: kindInt, explicit: true}}
 	}
 	var diags []diag.Diag
 	for _, f := range e.forms {
@@ -280,20 +280,20 @@ func check(c catalog, def language.Tag, byKey map[string]message) []diag.Diag {
 func builtinCovers(tag, def language.Tag, key string) bool {
 	base, _ := tag.Base()
 	defBase, _ := def.Base()
-	return base != defBase && i18n.BuiltinIn(tag, key)
+	return base != defBase && runtime.BuiltinIn(tag, key)
 }
 
 // fixed reports whether key is a built-in text or the name of a field, whose
 // placeholders the runtime fills with what it has, rather than a constructor
 // with what it takes.
 func fixed(key string) bool {
-	return i18n.IsBuiltin(key) || strings.HasPrefix(key, attributesPrefix)
+	return runtime.IsBuiltin(key) || strings.HasPrefix(key, attributesPrefix)
 }
 
 // fixedParams checks the placeholders of e, whose key is fixed: those of the
 // built-in text it overrides, or none for the name of a field.
 func fixedParams(e entry) []diag.Diag {
-	names, builtin := i18n.BuiltinParams(e.key)
+	names, builtin := runtime.BuiltinParams(e.key)
 	var diags []diag.Diag
 	for _, f := range e.forms {
 		for _, p := range f.params {

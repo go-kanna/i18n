@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-kanna/i18n"
 	"github.com/go-kanna/i18n/internal/gen"
+	"github.com/go-kanna/i18n/internal/runtime"
 )
 
 // TestReadBundle reads back the golden files, which TestEmit keeps what emit
@@ -67,7 +68,7 @@ var bundle = i18n.NewBundle(
 		t.Errorf("ReadBundle() = %+v, want %+v", got, want)
 	}
 	// The Bundle is built of them: fr falls back to en, the first.
-	if got := i18n.Lookup(b, "hello"); len(got) != 3 {
+	if got := runtime.Lookup[i18n.Entry](b, "hello"); len(got) != 3 {
 		t.Errorf("Lookup(hello) = %+v, want en's in each of the 3 languages", got)
 	}
 }

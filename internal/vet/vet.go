@@ -30,6 +30,7 @@ import (
 
 	"github.com/go-kanna/i18n"
 	"github.com/go-kanna/i18n/internal/gen"
+	"github.com/go-kanna/i18n/internal/runtime"
 )
 
 const (
@@ -104,7 +105,7 @@ type messages struct {
 func (m messages) lookup(key string) []i18n.Entry {
 	entries := make([]i18n.Entry, 0, len(m.bundles))
 	for _, b := range m.bundles {
-		entries = append(entries, i18n.Lookup(b, key)...)
+		entries = append(entries, runtime.Lookup[i18n.Entry](b, key)...)
 	}
 	return entries
 }
@@ -157,7 +158,7 @@ func readMessages(dir, tags string) (messages, []diag.Diag) {
 			return messages{}, ds
 		}
 		m.bundles = append(m.bundles, b)
-		for _, key := range i18n.Keys(b) {
+		for _, key := range runtime.Keys(b) {
 			keys[key] = true
 		}
 	}
@@ -325,7 +326,7 @@ func givenParams(info *types.Info, call *ast.CallExpr, r reporter) (map[string]b
 func missing(entries []i18n.Entry, params map[string]bool) []string {
 	var common map[string]bool
 	for _, e := range entries {
-		for _, t := range forms(e, params[i18n.CountParam]) {
+		for _, t := range forms(e, params[runtime.CountParam]) {
 			used := map[string]bool{}
 			for _, s := range t {
 				if s.Param != "" && !params[s.Param] {

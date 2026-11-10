@@ -127,12 +127,7 @@ func (l Localizer) Localize(m Message) string {
 	return m.Key
 }
 
-// Lookup returns the entries the languages of b render key with, one for each
-// language that has key, the built-in texts included; a language with none
-// renders key as itself. The entries are copies, so changing one changes
-// nothing b renders. It is exported for kanna-i18n vet, which checks the codes
-// a program reports against them.
-func Lookup(b Bundle, key string) []Entry {
+func lookupEntries(b Bundle, key string) []Entry {
 	var out []Entry
 	for _, c := range b.chains {
 		if _, e, ok := find(c, key); ok {
@@ -142,11 +137,7 @@ func Lookup(b Bundle, key string) []Entry {
 	return out
 }
 
-// Keys returns, sorted, the keys some language of b renders, the built-in texts
-// included where a language reaches them: those Lookup finds an entry of. It
-// is exported for kanna-i18n vet, which suggests one of them for a code no
-// language has.
-func Keys(b Bundle) []string {
+func bundleKeys(b Bundle) []string {
 	keys := make(map[string]bool)
 	for _, c := range b.chains {
 		for _, loc := range c {
