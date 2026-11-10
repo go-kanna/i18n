@@ -165,7 +165,11 @@ func TestParseLocale_errors(t *testing.T) {
 			src:  "\"a.b\": hi\n",
 			want: []string{`en.yaml:1:1: error: invalid key "a.b": ` + badKey + dotHint("b", "a")},
 		},
-		{name: "key with an upper case part", src: "a.B: hi\n", want: []string{`en.yaml:1:1: error: invalid key "a.B": ` + badKey}},
+		{
+			name: "key with an upper case part",
+			src:  "a.B: hi\n",
+			want: []string{`en.yaml:1:1: error: invalid key "a.B": ` + badKey},
+		},
 		{name: "number key", src: "123: hi\n", want: []string{`en.yaml:1:1: error: invalid key "123": ` + badKey}},
 		{
 			name: "merge key",
