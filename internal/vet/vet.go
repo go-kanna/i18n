@@ -139,7 +139,8 @@ func readMessages(dir, tags string) (messages, []diag.Diag) {
 		}
 	}
 	if len(paths) == 0 {
-		return errorf("no package of module %s holds what %s generates", modPath, generator)
+		d := diag.Errorf(token.Position{}, "no package of module %s holds what %s generates", modPath, generator)
+		return messages{}, []diag.Diag{d.WithHints("run " + generator + " first: vet reads the messages it generates")}
 	}
 
 	set, err := packages.Load(paths, packages.Config{Dir: root, Tags: tags, TypesInfo: true})

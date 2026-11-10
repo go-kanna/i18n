@@ -122,7 +122,9 @@ func TestBundle_Localizer(t *testing.T) {
 		{name: "first that matches", langs: []string{"fr", "ja", "de"}, want: "こんにちは！"},
 		{name: "first wins over later", langs: []string{"de", "ja"}, want: "Hallo!"},
 		{name: "unparsable skipped", langs: []string{"not a tag", "ja"}, want: "こんにちは！"},
-		{name: "a bad entry drops its whole value", langs: []string{"ja, not a tag", "de"}, want: "Hallo!"},
+		{name: "a bad entry is skipped", langs: []string{"not a tag, ja", "de"}, want: "こんにちは！"},
+		{name: "a bad weight is skipped", langs: []string{"de;q=x, ja;q=0.5"}, want: "こんにちは！"},
+		{name: "a weight in upper case", langs: []string{"de;Q=0.1, ja;Q=0.5"}, want: "こんにちは！"},
 		{name: "empty skipped", langs: []string{"", "de"}, want: "Hallo!"},
 	}
 

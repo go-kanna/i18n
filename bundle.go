@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 
 	"golang.org/x/text/language"
 )
@@ -98,15 +99,42 @@ var builtinLocales = func() map[language.Base]locale {
 // Accept-Language value, such as "fr, ja;q=0.8". They are tried in order until
 // one is close to a language of b, as CLDR judges closeness: en-US is served
 // by en, and nb by da when b has Danish but no Norwegian. So a language the
-// user picked can come before the ones the browser asks for. A value that does
-// not parse is skipped as a whole, one bad entry and all, and when nothing
-// matches, the default language is used.
+// user picked can come before the ones the browser asks for. An entry of a
+// value that does not parse is skipped, and the rest of the value is still
+// tried. When nothing matches, the default language is used.
 func (b Bundle) Localizer(langs ...string) Localizer {
 	if b.matcher == nil {
 		return Localizer{}
 	}
-	_, i := language.MatchStrings(b.matcher, langs...)
+	for _, s := range langs {
+		desired := parseLanguages(s)
+		if len(desired) == 0 {
+			continue
+		}
+		if _, i, conf := b.matcher.Match(desired...); conf != language.No {
+			return Localizer{chain: b.chains[i]}
+		}
+	}
+	_, i, _ := b.matcher.Match()
 	return Localizer{chain: b.chains[i]}
+}
+
+// parseLanguages returns the languages of s, an Accept-Language value, by
+// weight, leaving out the entries that do not parse. The weight is read in
+// either case, as Q=0.5, the way RFC 9110 has it.
+func parseLanguages(s string) []language.Tag {
+	var entries []string
+	//nolint:modernize // ranging over SplitSeq races in the type checker of Go 1.27.3 when tests load this package
+	for _, e := range strings.Split(s, ",") {
+		if tag, params, ok := strings.Cut(e, ";"); ok {
+			e = tag + ";" + strings.ToLower(params)
+		}
+		if _, _, err := language.ParseAcceptLanguage(e); err == nil {
+			entries = append(entries, e)
+		}
+	}
+	tags, _, _ := language.ParseAcceptLanguage(strings.Join(entries, ","))
+	return tags
 }
 
 // Localizer renders messages in the language a Bundle chose for it. The zero

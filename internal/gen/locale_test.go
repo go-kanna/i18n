@@ -87,6 +87,10 @@ func TestParseLocale_errors(t *testing.T) {
 	t.Parallel()
 
 	const badKey = "each part of a key matches [a-z][a-z0-9_]*"
+	dotHint := func(part, parent string) string {
+		return "\n  nest each part under the one before it, " + part + ": under " + parent + ":" +
+			"\n  only the keys under errors.attributes are written with dots"
+	}
 
 	tests := []struct {
 		name string
@@ -99,14 +103,39 @@ func TestParseLocale_errors(t *testing.T) {
 			want: []string{"en.yaml:1: error: did not find expected node content"},
 		},
 		{
-			name: "syntax without a line",
+			name: "syntax on the first line",
 			src:  "\tgreeting: hi\n",
-			want: []string{"en.yaml: error: found character that cannot start any token"},
+			want: []string{"en.yaml:1: error: found character that cannot start any token"},
+		},
+		{
+			name: "syntax the parser finds",
+			src:  "a: x\nb: y\nc: {d\ne: f\n",
+			want: []string{"en.yaml:3: error: did not find expected ',' or '}'"},
+		},
+		{
+			name: "syntax the parser finds on the first line",
+			src:  "a: x\n- b\n",
+			want: []string{"en.yaml:2: error: did not find expected key"},
+		},
+		{
+			name: "syntax the scanner finds",
+			src:  "a: x\nb: c: d\n",
+			want: []string{"en.yaml:2: error: mapping values are not allowed in this context"},
+		},
+		{
+			name: "unknown anchor",
+			src:  "a: x\nb: *c\n",
+			want: []string{"en.yaml: error: unknown anchor 'c' referenced"},
 		},
 		{
 			name: "a path elsewhere",
 			src:  "user.name: Name\n",
-			want: []string{`en.yaml:1:1: error: invalid key "user.name": ` + badKey},
+			want: []string{`en.yaml:1:1: error: invalid key "user.name": ` + badKey + dotHint("name", "user")},
+		},
+		{
+			name: "a long path elsewhere",
+			src:  "a.b.c: Name\n",
+			want: []string{`en.yaml:1:1: error: invalid key "a.b.c": ` + badKey + dotHint("b", "a")},
 		},
 		{
 			name: "attributes nested",
@@ -131,7 +160,16 @@ func TestParseLocale_errors(t *testing.T) {
 			src:  "Greeting: hi\n",
 			want: []string{`en.yaml:1:1: error: invalid key "Greeting": ` + badKey},
 		},
-		{name: "key with a dot", src: "\"a.b\": hi\n", want: []string{`en.yaml:1:1: error: invalid key "a.b": ` + badKey}},
+		{
+			name: "key with a dot",
+			src:  "\"a.b\": hi\n",
+			want: []string{`en.yaml:1:1: error: invalid key "a.b": ` + badKey + dotHint("b", "a")},
+		},
+		{
+			name: "key with an upper case part",
+			src:  "a.B: hi\n",
+			want: []string{`en.yaml:1:1: error: invalid key "a.B": ` + badKey},
+		},
 		{name: "number key", src: "123: hi\n", want: []string{`en.yaml:1:1: error: invalid key "123": ` + badKey}},
 		{
 			name: "merge key",

@@ -81,6 +81,11 @@ func readLocales(dir string) ([]catalog, []diag.Diag) {
 				WithHints("keep one file per language"))
 			continue
 		}
+		if !hasCLDRData(tag) {
+			diags = append(diags, diag.Warningf(pos,
+				"x/text holds no CLDR data for %s, so it has no plural rules or number format of its own", tag).
+				WithHints(fmt.Sprintf("check that %q names a language; keep other files out of %s", stem, filepath.Base(dir))))
+		}
 
 		data, err := os.ReadFile(path) //nolint:gosec // reading the locale files the user points at is the point
 		if err != nil {
@@ -108,6 +113,15 @@ func languageOf(s string) (language.Tag, bool) {
 	}
 	_, ok := baseOf(tag)
 	return tag, ok
+}
+
+// hasCLDRData reports whether x/text holds CLDR data for the language of tag.
+// A three-letter name such as app or dev reads as an ISO 639-3 language, which
+// is likely no language the file is meant for.
+func hasCLDRData(tag language.Tag) bool {
+	base, _ := tag.Base()
+	_, exact := language.CompactIndex(language.Make(base.String()))
+	return exact
 }
 
 // baseOf returns the language of tag, without its region or script. A tag
