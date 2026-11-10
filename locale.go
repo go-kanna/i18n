@@ -3,8 +3,8 @@ package i18n
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"slices"
-	"strconv"
 	"strings"
 
 	"golang.org/x/text/feature/plural"
@@ -101,14 +101,26 @@ func (l locale) pick(p Plural, args []Arg) Template {
 	return p.form(plural.Cardinal.MatchPlural(l.tag, n, 0, 0, 0, 0))
 }
 
+// format writes a number, whatever its type is named, in the number format of
+// the language: an integer in its digits but ungrouped, and a float under
+// CLDR's default pattern. A value that says how it is written, as a String
+// method does, is left to fmt.
 func (l locale) format(v any) string {
 	switch v := v.(type) {
 	case string:
 		return v
-	case int:
-		return strconv.Itoa(v)
-	case float64:
-		return l.printer.Sprint(number.Decimal(v))
+	case fmt.Stringer, error:
+		return fmt.Sprint(v)
+	}
+	switch r := reflect.ValueOf(v); {
+	case r.CanInt():
+		return l.printer.Sprint(number.Decimal(r.Int(), number.NoSeparator()))
+	case r.CanUint():
+		return l.printer.Sprint(number.Decimal(r.Uint(), number.NoSeparator()))
+	case r.Kind() == reflect.Float32:
+		return l.printer.Sprint(number.Decimal(float32(r.Float())))
+	case r.CanFloat():
+		return l.printer.Sprint(number.Decimal(r.Float()))
 	default:
 		return fmt.Sprint(v)
 	}
