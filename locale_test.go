@@ -111,12 +111,38 @@ func TestRender(t *testing.T) {
 		{name: "plural zero in en", lang: "en", entry: items, args: []i18n.Arg{arg("count", 0)}, want: "You have 0 items."},
 		{name: "plural negative", lang: "en", entry: items, args: []i18n.Arg{arg("count", -1)}, want: "You have -1 item."},
 		{name: "plural without a count", lang: "en", entry: items, want: "You have {count} items."},
+		// Any integer type picks the form; a float takes other.
+		{name: "plural int64", lang: "en", entry: items, args: []i18n.Arg{arg("count", int64(1))}, want: "You have 1 item."},
+		{name: "plural uint8", lang: "en", entry: items, args: []i18n.Arg{arg("count", uint8(1))}, want: "You have 1 item."},
 		{
-			name:  "plural with a count that is not an int",
+			name:  "plural named int",
 			lang:  "en",
 			entry: items,
-			args:  []i18n.Arg{arg("count", int64(1))},
+			args:  []i18n.Arg{arg("count", level(1))},
+			want:  "You have 1 item.",
+		},
+		{
+			name:  "plural int8 negative",
+			lang:  "en",
+			entry: items,
+			args:  []i18n.Arg{arg("count", int8(-1))},
+			want:  "You have -1 item.",
+		},
+		{name: "plural float", lang: "en", entry: items, args: []i18n.Arg{arg("count", 1.0)}, want: "You have 1 items."},
+		{
+			name:  "plural named float",
+			lang:  "en",
+			entry: items,
+			args:  []i18n.Arg{arg("count", ratio(1))},
 			want:  "You have 1 items.",
+		},
+		{name: "plural string", lang: "en", entry: items, args: []i18n.Arg{arg("count", "1")}, want: "You have 1 items."},
+		{
+			name:  "plural uint64 one in ru",
+			lang:  "ru",
+			entry: forms,
+			args:  []i18n.Arg{arg("count", uint64(21))},
+			want:  "one:21",
 		},
 		// Japanese has no one; 1 takes other, the form the catalog has.
 		{name: "plural in ja", lang: "ja", entry: itemsJa, args: []i18n.Arg{arg("count", 1)}, want: "アイテムが1個あります。"},
@@ -147,6 +173,20 @@ func TestRender(t *testing.T) {
 			entry: forms,
 			args:  []i18n.Arg{arg("count", math.MinInt)},
 			want:  "many:" + strconv.Itoa(math.MinInt),
+		},
+		{
+			name:  "plural MinInt64 in ru",
+			lang:  "ru",
+			entry: forms,
+			args:  []i18n.Arg{arg("count", int64(math.MinInt64))},
+			want:  "many:" + strconv.FormatInt(math.MinInt64, 10),
+		},
+		{
+			name:  "plural MaxUint64 in ru",
+			lang:  "ru",
+			entry: forms,
+			args:  []i18n.Arg{arg("count", uint64(math.MaxUint64))},
+			want:  "many:" + strconv.FormatUint(math.MaxUint64, 10),
 		},
 	}
 

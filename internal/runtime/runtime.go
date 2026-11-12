@@ -5,7 +5,7 @@ package runtime
 
 import "golang.org/x/text/language"
 
-// CountParam is the argument whose value, an int, picks the form of a plural
+// CountParam is the argument whose value, an integer, picks the form of a plural
 // message. kanna-i18n names the count of every plural constructor so.
 const CountParam = "count"
 
