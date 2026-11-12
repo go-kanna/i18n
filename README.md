@@ -178,6 +178,10 @@ A count of 0 renders with `zero` whenever the message has it, as in Rails, so `z
 works although English has no zero category. In a language whose rules do have one, such as Latvian, `zero` takes the
 other counts of that category too: 10 through 20, for one.
 
+A count passed some other way, such as a param of a rule or one of `i18n.Coded`, picks the form by its value whatever
+its integer type is: an `int64`, a `uint8`, and a `type Count int` all do. A float count renders with `other`, 1.0
+included.
+
 ### Placeholders
 
 | Form            | Parameter | Rendered                                                                             |
@@ -303,10 +307,11 @@ A code no language has renders as its key, `errors.messages.taken`, so a rule wi
 vanishes.
 
 The params of a code render by their Go type. A kind written in those keys, such as `{count:int}`, would decide nothing,
-and stops generation. What a count's type does decide is the plural form: only an int picks one, and any other count
-takes `other`. The lengths of `too_short`, `too_long`, `wrong_length`, `too_few`, `too_many`, and `wrong_count` are
-always an int, so they may be written in plural forms. The bound of `greater_than` and the other numeric codes has the
-type of the field it was checked on, such as a float32 or a `type Ratio float64`, so keep its message single.
+and stops generation. What a count's type does decide is the plural form: an integer of any type picks one, and any
+other count, a float included, takes `other`. The lengths of `too_short`, `too_long`, `wrong_length`, `too_few`,
+`too_many`, and `wrong_count` are always an int, so they may be written in plural forms. The bound of `greater_than` and
+the other numeric codes has the type of the field it was checked on, such as a float32 or a `type Ratio float64`, so
+keep its message single.
 
 A number renders by its kind, whatever its type is named: an integer as an `int` does and a float as a `number` does, so
 a float32 bound of 1000.5 reads `1.000,5` in de. A param that is neither a string nor a number, or whose type has a

@@ -81,26 +81,38 @@ func (l locale) render(e Entry, args []Arg) string {
 // pick returns the form of p for the count in args. A count of 0 takes Zero
 // when p has it, whatever the language, as in Rails and i18next; any other
 // count takes the form of the category it falls in under the rules of this
-// language. Without an int count, it is Other.
+// language. Without an integer count, it is Other.
 func (l locale) pick(p Plural, args []Arg) Template {
 	v, _ := lookup(args, runtime.CountParam)
-	n, ok := v.(int)
+	n, ok := magnitude(v)
 	switch {
 	case !ok:
 		return p.Other
 	case n == 0 && p.Zero != nil:
 		return p.Zero
 	}
-	// The rules are written for the absolute value, and those taking remainders
-	// panic on a negative one. MinInt has no absolute value as an int, so it
-	// counts as the next one up.
-	if n == math.MinInt {
-		n++
-	}
-	if n < 0 {
-		n = -n
-	}
 	return p.form(plural.Cardinal.MatchPlural(l.tag, n, 0, 0, 0, 0))
+}
+
+// magnitude returns the absolute value of v, an integer of any type, which the
+// plural rules are written for: those taking remainders panic on a negative
+// one. A value beyond MaxInt, such as the absolute value of MinInt, counts as
+// MaxInt.
+func magnitude(v any) (int, bool) {
+	var n uint64
+	switch r := reflect.ValueOf(v); {
+	case r.CanInt():
+		i := r.Int()
+		if i < 0 {
+			i = -max(i, -math.MaxInt64)
+		}
+		n = uint64(i) //nolint:gosec // i is not negative here
+	case r.CanUint():
+		n = r.Uint()
+	default:
+		return 0, false
+	}
+	return int(min(n, math.MaxInt)), true
 }
 
 // format writes a number, whatever its type is named, in the number format of
