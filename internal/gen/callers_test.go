@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-kanna/internal/cli"
+	"golang.org/x/mod/modfile"
 )
 
 // TestMain loads every module the tests write outside any workspace. A GOWORK
@@ -38,7 +39,7 @@ func app(t *testing.T) string {
 	writeFiles(t, dir, locales)
 	writeFiles(t, dir, map[string]string{
 		"go.mod": "module example.com/app\n\ngo 1.26.0\n\nrequire github.com/go-kanna/i18n v0.0.0\n\n" +
-			"require golang.org/x/text v0.43.0 // indirect\n\nreplace github.com/go-kanna/i18n => " + root + "\n",
+			requireText(t, root) + "\nreplace github.com/go-kanna/i18n => " + root + "\n",
 		"go.sum": string(sum),
 		"main.go": "package main\n\nimport (\n\t\"fmt\"\n\n\t\"example.com/app/messages\"\n)\n\n" +
 			"func main() { fmt.Println(messages.Localizer(\"ja\").Localize(messages.Hello(\"Alice\"))) }\n",
@@ -46,6 +47,28 @@ func app(t *testing.T) string {
 			"func Welcome(name string) i18n.Message { return Hello(name) }\n",
 	})
 	return dir
+}
+
+// requireText returns the require line for the golang.org/x/text the go.mod of
+// root requires, which the copied go.sum holds.
+func requireText(t *testing.T, root string) string {
+	t.Helper()
+
+	data, err := os.ReadFile(filepath.Join(root, "go.mod")) //nolint:gosec // this checkout's own go.mod
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := modfile.ParseLax("go.mod", data, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range f.Require {
+		if r.Mod.Path == "golang.org/x/text" {
+			return "require golang.org/x/text " + r.Mod.Version + " // indirect\n"
+		}
+	}
+	t.Fatal("go.mod requires no golang.org/x/text")
+	return ""
 }
 
 func TestCommand_generatesWhatCodeAlreadyCalls(t *testing.T) {
