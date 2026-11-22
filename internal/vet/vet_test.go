@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-kanna/internal/cli"
 	"github.com/go-kanna/internal/diag"
+	"golang.org/x/mod/modfile"
 
 	"github.com/go-kanna/i18n/internal/gen"
 	"github.com/go-kanna/i18n/internal/vet"
@@ -304,8 +305,7 @@ require (
 	github.com/go-kanna/value v0.0.0
 )
 
-require golang.org/x/text v0.43.0 // indirect
-
+` + requireText(t, root) + `
 replace (
 	github.com/go-kanna/i18n => ` + root + `
 	github.com/go-kanna/validator => ./fake/validator
@@ -322,6 +322,28 @@ replace (
 		}
 	}
 	return dir
+}
+
+// requireText returns the require line for the golang.org/x/text the go.mod of
+// root requires, which the copied go.sum holds.
+func requireText(t *testing.T, root string) string {
+	t.Helper()
+
+	data, err := os.ReadFile(filepath.Join(root, "go.mod")) //nolint:gosec // this checkout's own go.mod
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := modfile.ParseLax("go.mod", data, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range f.Require {
+		if r.Mod.Path == "golang.org/x/text" {
+			return "require golang.org/x/text " + r.Mod.Version + " // indirect\n"
+		}
+	}
+	t.Fatal("go.mod requires no golang.org/x/text")
+	return ""
 }
 
 // report renders ds as diag does, naming each file by its base name.
